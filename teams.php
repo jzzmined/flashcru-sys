@@ -1,7 +1,7 @@
 <?php
 /**
  * FlashCru Emergency Response System
- * Teams Management Page — Redesigned UI v2
+ * Teams Management — Red/White/Blue Theme v3.0
  */
 
 require_once 'includes/config.php';
@@ -50,11 +50,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_team'])) {
     exit();
 }
 
-// Fetch all teams with member count
+// Fetch teams with stats
 $teams = $db->fetchAll("
     SELECT t.*,
-           COUNT(tm.team_mem_id) AS member_count,
-           COUNT(i.incident_id) AS active_incidents
+           COUNT(tm.team_mem_id)  AS member_count,
+           COUNT(i.incident_id)   AS active_incidents
     FROM teams t
     LEFT JOIN team_members tm ON t.team_id = tm.team_id
     LEFT JOIN incidents i ON t.team_id = i.assigned_team AND i.status IN ('active','critical')
@@ -62,20 +62,21 @@ $teams = $db->fetchAll("
     ORDER BY t.status, t.team_name
 ");
 
-$responders = $db->fetchAll("SELECT user_id, full_name, role FROM users WHERE status = 'active' ORDER BY full_name");
-
 $edit_team = null;
 if (isset($_GET['edit'])) {
     $edit_team = $db->fetchOne("SELECT * FROM teams WHERE team_id = ?", [(int)$_GET['edit']]);
 }
+
+$count_available = count(array_filter($teams, fn($t) => $t['status'] === 'available'));
+$count_busy      = count(array_filter($teams, fn($t) => $t['status'] === 'busy'));
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo $page_title; ?> - FlashCru</title>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800&display=swap" rel="stylesheet">
+    <title><?php echo $page_title; ?> — FlashCru</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/css/main.css">
 </head>
 <body>
@@ -88,7 +89,7 @@ if (isset($_GET['edit'])) {
             <!-- Page Header -->
             <div class="flex-between mb-20">
                 <div>
-                    <h2 style="font-size:22px;font-weight:800;">👥 Teams</h2>
+                    <h2 style="font-size:22px;font-weight:800;color:var(--navy);">👥 Teams</h2>
                     <p class="text-muted" style="font-size:13px;margin-top:3px;">Manage emergency response teams</p>
                 </div>
                 <?php if (isAdmin() || isDispatcher()): ?>
@@ -97,55 +98,54 @@ if (isset($_GET['edit'])) {
             </div>
 
             <?php if (isset($_GET['msg'])): ?>
-                <div class="alert alert-success">✅ Team <?php echo htmlspecialchars($_GET['msg']); ?> successfully!</div>
+            <div class="alert alert-success">✅ Team <?php echo htmlspecialchars($_GET['msg']); ?> successfully!</div>
             <?php endif; ?>
 
-            <!-- Team Stats -->
-            <div class="stats-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:28px;">
-                <div class="stat-card" style="display:flex;align-items:center;gap:16px;">
+            <!-- Team KPIs -->
+            <div class="cards-grid cards-grid-3" style="margin-bottom:28px;">
+                <div class="stat-card resolved" style="display:flex;align-items:center;gap:16px;">
                     <div class="stat-icon green">✅</div>
                     <div class="stat-info">
-                        <h3>Available</h3>
-                        <div class="stat-value green">
-                            <?php echo count(array_filter($teams, fn($t) => $t['status'] === 'available')); ?>
-                        </div>
+                        <h3 class="card-label">Available</h3>
+                        <div class="stat-value green"><?php echo $count_available; ?></div>
                     </div>
                 </div>
-                <div class="stat-card" style="display:flex;align-items:center;gap:16px;">
+                <div class="stat-card critical" style="display:flex;align-items:center;gap:16px;">
                     <div class="stat-icon red">🚨</div>
                     <div class="stat-info">
-                        <h3>Busy</h3>
-                        <div class="stat-value red">
-                            <?php echo count(array_filter($teams, fn($t) => $t['status'] === 'busy')); ?>
-                        </div>
+                        <h3 class="card-label">Busy / On Scene</h3>
+                        <div class="stat-value red"><?php echo $count_busy; ?></div>
                     </div>
                 </div>
-                <div class="stat-card" style="display:flex;align-items:center;gap:16px;">
+                <div class="stat-card today" style="display:flex;align-items:center;gap:16px;">
                     <div class="stat-icon cyan">👥</div>
                     <div class="stat-info">
-                        <h3>Total Teams</h3>
+                        <h3 class="card-label">Total Teams</h3>
                         <div class="stat-value cyan"><?php echo count($teams); ?></div>
                     </div>
                 </div>
             </div>
 
             <!-- Teams Grid -->
+            <?php if (empty($teams)): ?>
+            <div class="empty-state">No teams found. <a href="teams.php" onclick="openModal('teamModal');return false;" style="color:var(--red-600);">Create the first team →</a></div>
+            <?php else: ?>
             <div class="teams-grid">
-                <?php foreach ($teams as $team): ?>
                 <?php
-                $type_icons = ['fire'=>'🔥','medical'=>'🚑','police'=>'🚔','rescue'=>'🚒'];
-                $icon = $type_icons[$team['team_type']] ?? '👥';
+                $type_icons   = ['fire'=>'🔥','medical'=>'🚑','police'=>'🚔','rescue'=>'🚒'];
+                $type_classes = ['fire'=>'fire','medical'=>'medical','police'=>'police','rescue'=>'rescue'];
+                foreach ($teams as $team):
+                    $icon  = $type_icons[$team['team_type']] ?? '👥';
+                    $tclass = $type_classes[$team['team_type']] ?? 'police';
                 ?>
                 <div class="team-card">
                     <div class="team-card-header">
-                        <div class="team-card-icon"><?php echo $icon; ?></div>
+                        <div class="team-card-icon <?php echo $tclass; ?>"><?php echo $icon; ?></div>
                         <div class="team-card-info">
                             <h3><?php echo htmlspecialchars($team['team_name']); ?></h3>
                             <p><?php echo ucfirst($team['team_type']); ?> Department</p>
                         </div>
-                        <span class="badge badge-<?php echo $team['status']; ?>">
-                            <?php echo ucfirst($team['status']); ?>
-                        </span>
+                        <span class="badge badge-<?php echo $team['status']; ?>"><?php echo ucfirst($team['status']); ?></span>
                     </div>
 
                     <div class="team-card-body">
@@ -159,19 +159,22 @@ if (isset($_GET['edit'])) {
                         </div>
                         <div class="team-detail">
                             <span>👤 Members</span>
-                            <span><?php echo $team['member_count']; ?> members</span>
+                            <span style="font-weight:700;color:var(--blue-500);"><?php echo (int)$team['member_count']; ?> members</span>
                         </div>
                         <div class="team-detail">
                             <span>🚨 Active Incidents</span>
-                            <span><?php echo $team['active_incidents']; ?></span>
+                            <span style="font-weight:700;color:<?php echo $team['active_incidents'] > 0 ? 'var(--red-600)' : 'var(--green)'; ?>">
+                                <?php echo (int)$team['active_incidents']; ?>
+                            </span>
                         </div>
                     </div>
 
                     <div class="team-card-footer">
-                        <!-- Quick Status Change -->
+                        <!-- Quick Status -->
                         <form method="POST" style="display:inline;">
                             <input type="hidden" name="team_id" value="<?php echo $team['team_id']; ?>">
-                            <select name="status" class="form-control" style="width:auto;padding:6px 30px 6px 10px;font-size:12px;"
+                            <select name="status" class="form-control"
+                                    style="width:auto;padding:6px 30px 6px 10px;font-size:12px;"
                                     onchange="this.form.submit()">
                                 <option value="available" <?php echo $team['status']==='available'?'selected':''; ?>>Available</option>
                                 <option value="busy"      <?php echo $team['status']==='busy'?'selected':''; ?>>Busy</option>
@@ -192,10 +195,11 @@ if (isset($_GET['edit'])) {
                 </div>
                 <?php endforeach; ?>
             </div>
+            <?php endif; ?>
 
-        </div>
-    </div>
-</div>
+        </div><!-- /page-content -->
+    </div><!-- /main-content -->
+</div><!-- /dashboard-wrapper -->
 
 <!-- Team Modal -->
 <div class="modal-overlay <?php echo $edit_team ? 'active' : ''; ?>" id="teamModal">
@@ -247,7 +251,7 @@ if (isset($_GET['edit'])) {
                     <label class="form-label">Base Location</label>
                     <input type="text" name="location" class="form-control"
                            value="<?php echo htmlspecialchars($edit_team['location'] ?? ''); ?>"
-                           placeholder="Station address">
+                           placeholder="Station address or landmark">
                 </div>
             </div>
             <div class="modal-footer">
@@ -261,7 +265,7 @@ if (isset($_GET['edit'])) {
 </div>
 
 <script>
-function openModal(id) { document.getElementById(id).classList.add('active'); }
+function openModal(id)  { document.getElementById(id).classList.add('active'); }
 function closeModal(id) {
     document.getElementById(id).classList.remove('active');
     <?php if ($edit_team): ?>window.location.href = 'teams.php';<?php endif; ?>

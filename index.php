@@ -35,35 +35,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login — FlashCru Emergency Response</title>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
         :root {
-          --bg:           #EEF1F7;
-          --white:        #FAFCFF;
-          --navy:         #1A2340;
-          --indigo:       #3D5AF1;
-          --red:          #E53935;
-          --red-light:    #FDEAEA;
-          --text-primary: #1A2340;
-          --text-muted:   #8E9BBE;
-          --border:       rgba(160,180,220,0.25);
-          --neu-out:      6px 6px 14px rgba(160,180,220,0.45), -4px -4px 10px rgba(255,255,255,0.80);
-          --neu-inset:    inset 3px 3px 8px rgba(160,180,220,0.35), inset -3px -3px 8px rgba(255,255,255,0.75);
-          --neu-card:     4px 4px 12px rgba(150,170,210,0.30), -3px -3px 8px rgba(255,255,255,0.85);
+          --red-50:   #FFF1F2;
+          --red-100:  #FFE4E6;
+          --red-200:  #FECDD3;
+          --red-400:  #E07B82;
+          --red-600:  #A63244;
+          --red-700:  #7D1D2F;
+          --blue-500: #3B82F6;
+          --blue-600: #2563EB;
+          --cream:    #FEF8F8;
+          --white:    #FFFFFF;
+          --gray-100: #F3F4F6;
+          --gray-200: #E5E7EB;
+          --gray-400: #9CA3AF;
+          --gray-500: #6B7280;
+          --gray-600: #4B5563;
+          --navy:     #0F172A;
         }
 
         html { -webkit-font-smoothing: antialiased; }
 
         body {
-            font-family: 'DM Sans', -apple-system, sans-serif;
+            font-family: 'Sora', -apple-system, sans-serif;
             font-size: 14px;
-            background: var(--bg);
+            background: var(--cream);
             background-image:
-              radial-gradient(ellipse at 15% 50%, rgba(61,90,241,0.09) 0%, transparent 55%),
-              radial-gradient(ellipse at 85% 15%, rgba(229,57,53,0.08) 0%, transparent 50%),
-              radial-gradient(ellipse at 70% 85%, rgba(61,90,241,0.06) 0%, transparent 45%);
+              radial-gradient(ellipse at 10% 50%, rgba(124,29,52,0.08) 0%, transparent 55%),
+              radial-gradient(ellipse at 90% 10%, rgba(37,99,235,0.07) 0%, transparent 55%),
+              radial-gradient(ellipse at 70% 90%, rgba(124,29,52,0.05) 0%, transparent 45%);
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -85,14 +89,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .brand-logo {
             width: 68px; height: 68px;
             border-radius: 20px;
-            background: linear-gradient(135deg, #E53935, #C62828);
+            background: linear-gradient(135deg, #A63244, #7D1D2F);
             margin: 0 auto 14px;
             display: flex; align-items: center; justify-content: center;
             overflow: hidden;
-            box-shadow: 6px 6px 14px rgba(229,57,53,0.30), -3px -3px 8px rgba(255,255,255,0.80);
+            box-shadow: 0 6px 20px rgba(124,29,52,0.35);
         }
-
         .brand-logo img { width: 100%; height: 100%; object-fit: contain; display: block; }
+        .brand-logo .logo-fallback { font-size: 28px; }
 
         .brand-name {
             font-size: 28px;
@@ -100,10 +104,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             color: var(--navy);
             letter-spacing: -0.5px;
         }
-
         .brand-sub {
             font-size: 13px;
-            color: var(--text-muted);
+            color: var(--gray-400);
             margin-top: 3px;
         }
 
@@ -113,98 +116,89 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             background: var(--white);
             border-radius: 24px;
             padding: 36px;
-            box-shadow: var(--neu-out);
-            border: 1px solid rgba(255,255,255,0.70);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.06);
+            border: 1px solid var(--gray-100);
             position: relative;
             overflow: hidden;
         }
-
         .login-card::before {
             content: '';
             display: block;
             height: 3px;
-            background: linear-gradient(90deg, var(--red), var(--indigo));
+            background: linear-gradient(90deg, #A63244, #3B82F6);
             border-radius: 24px 24px 0 0;
             margin: -36px -36px 30px -36px;
         }
 
-        .card-title { font-size: 19px; font-weight: 700; color: var(--navy); margin-bottom: 4px; }
-        .card-sub   { font-size: 13px; color: var(--text-muted); margin-bottom: 26px; }
+        .card-title { font-size: 19px; font-weight: 800; color: var(--navy); margin-bottom: 4px; }
+        .card-sub   { font-size: 13px; color: var(--gray-400); margin-bottom: 26px; }
 
         /* Error */
         .error-alert {
-            background: var(--red-light);
+            background: var(--red-50);
+            border: 1px solid var(--red-200);
             border-radius: 10px;
             padding: 12px 14px;
             font-size: 13px;
-            margin-bottom: 22px;
+            margin-bottom: 20px;
             display: flex;
             align-items: center;
             gap: 8px;
-            color: var(--red);
-            box-shadow: inset 0 0 0 1px rgba(229,57,53,0.20);
+            color: var(--red-700);
         }
 
         /* Form */
-        .form-group { margin-bottom: 18px; }
-
+        .form-group { margin-bottom: 16px; }
         .form-label {
             display: block;
-            font-size: 12.5px;
+            font-size: 12px;
             font-weight: 600;
-            color: #5A6787;
-            margin-bottom: 7px;
+            color: var(--gray-600);
+            margin-bottom: 6px;
         }
-
         .form-input {
             display: block;
             width: 100%;
             padding: 11px 14px;
-            font-family: 'DM Sans', sans-serif;
+            font-family: 'Sora', sans-serif;
             font-size: 13px;
             color: var(--navy);
-            background: var(--bg);
+            background: var(--gray-100);
             border: 1.5px solid transparent;
             border-radius: 10px;
-            box-shadow: var(--neu-inset);
-            transition: all 0.22s;
+            transition: all 0.20s;
             outline: none;
         }
-
         .form-input:focus {
-            border-color: rgba(61,90,241,0.40);
-            box-shadow: var(--neu-inset), 0 0 0 3px rgba(61,90,241,0.10);
+            border-color: rgba(166,50,68,0.40);
             background: var(--white);
+            box-shadow: 0 0 0 3px rgba(166,50,68,0.10);
         }
+        .form-input::placeholder { color: var(--gray-400); }
 
-        .form-input::placeholder { color: var(--text-muted); }
-
-        /* Remember / Forgot */
+        /* Extras */
         .form-extras {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin: 16px 0 24px;
+            margin: 14px 0 22px;
         }
-
         .checkbox-label {
             display: flex;
             align-items: center;
             gap: 8px;
             font-size: 13px;
-            color: #5A6787;
+            color: var(--gray-600);
             cursor: pointer;
         }
-
         .checkbox-label input[type="checkbox"] {
             width: 16px; height: 16px;
-            accent-color: var(--indigo);
+            accent-color: var(--red-600);
             cursor: pointer;
         }
-
         .forgot-link {
             font-size: 13px;
-            color: var(--indigo);
+            color: var(--red-600);
             font-weight: 600;
             text-decoration: none;
             transition: opacity 0.15s;
@@ -219,24 +213,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             gap: 8px;
             width: 100%;
             padding: 13px;
-            background: linear-gradient(135deg, var(--indigo), #5B73F5);
+            background: linear-gradient(135deg, #A63244, #C25460);
             color: white;
             border: none;
-            border-radius: 10px;
-            font-family: 'DM Sans', sans-serif;
+            border-radius: 11px;
+            font-family: 'Sora', sans-serif;
             font-size: 14px;
             font-weight: 700;
             cursor: pointer;
             transition: all 0.22s;
-            letter-spacing: 0.01em;
-            box-shadow: 0 4px 16px rgba(61,90,241,0.30);
+            box-shadow: 0 4px 16px rgba(124,29,52,0.32);
         }
-
         .btn-login:hover {
-            box-shadow: 0 6px 22px rgba(61,90,241,0.45);
+            box-shadow: 0 6px 24px rgba(124,29,52,0.45);
             transform: translateY(-1px);
         }
-
         .btn-login:active { transform: translateY(0); }
 
         /* Divider */
@@ -244,10 +235,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             text-align: center;
             font-size: 11px;
             font-weight: 700;
-            color: var(--text-muted);
+            color: var(--gray-400);
             letter-spacing: 0.08em;
             text-transform: uppercase;
-            margin: 22px 0 18px;
+            margin: 22px 0 16px;
             position: relative;
         }
         .divider::before, .divider::after {
@@ -256,28 +247,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             top: 50%;
             width: 38%;
             height: 1px;
-            background: var(--border);
+            background: var(--gray-200);
         }
         .divider::before { left: 0; }
         .divider::after  { right: 0; }
 
         /* Demo box */
         .demo-box {
-            background: var(--bg);
+            background: var(--gray-100);
             border-radius: 12px;
             padding: 16px 18px;
-            box-shadow: var(--neu-inset);
+            border: 1px solid var(--gray-200);
         }
-
         .demo-title {
             font-size: 10px;
             font-weight: 700;
-            color: var(--indigo);
+            color: var(--blue-600);
             text-transform: uppercase;
             letter-spacing: 0.10em;
             margin-bottom: 12px;
         }
-
         .demo-row {
             display: flex;
             justify-content: space-between;
@@ -285,25 +274,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             margin-bottom: 8px;
         }
         .demo-row:last-child { margin-bottom: 0; }
-
-        .demo-label { font-size: 12.5px; color: #5A6787; font-weight: 500; }
-
+        .demo-label { font-size: 12.5px; color: var(--gray-500); font-weight: 500; }
         .demo-val {
             font-size: 12px;
-            font-family: 'DM Mono', monospace;
-            background: rgba(61,90,241,0.10);
-            color: var(--indigo);
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--red-100);
+            color: var(--red-700);
             padding: 3px 10px;
             border-radius: 6px;
             font-weight: 500;
-            letter-spacing: 0.02em;
         }
 
         /* Footer */
         .login-footer {
             margin-top: 22px;
             font-size: 12px;
-            color: var(--text-muted);
+            color: var(--gray-400);
             text-align: center;
         }
 
@@ -319,7 +305,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <!-- Brand -->
     <div class="brand-header">
         <div class="brand-logo">
-            <img src="fc-logo.jpg" alt="FlashCru Logo">
+            <img src="fc-logo.jpg" alt="FlashCru Logo"
+                 onerror="this.style.display='none';this.parentElement.innerHTML='<span class=&quot;logo-fallback&quot;>⚡</span>'">
         </div>
         <div class="brand-name">FlashCru</div>
         <div class="brand-sub">Emergency Response System</div>
@@ -397,7 +384,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     </div>
 
-    <div class="login-footer">⚡ FlashCru Emergency Response System v2.0</div>
+    <div class="login-footer">⚡ FlashCru Emergency Response System v3.0</div>
 
 </div>
 

@@ -1,7 +1,7 @@
 <?php
 /**
  * FlashCru Emergency Response System
- * Incidents Management Page
+ * Incidents Management — Red/White/Blue Theme v3.0
  */
 
 require_once 'includes/config.php';
@@ -24,12 +24,12 @@ if (isset($_GET['delete']) && isAdmin()) {
 
 // Handle Status Update
 if (isset($_POST['update_status'])) {
-    $id = (int)$_POST['incident_id'];
+    $id     = (int)$_POST['incident_id'];
     $status = sanitize($_POST['status']);
     $resolved_at = ($status === 'resolved') ? date('Y-m-d H:i:s') : null;
-    $db->update('incidents', 
-        ['status' => $status, 'resolved_at' => $resolved_at], 
-        'incident_id = :id', 
+    $db->update('incidents',
+        ['status' => $status, 'resolved_at' => $resolved_at],
+        'incident_id = :id',
         ['id' => $id]
     );
     logActivity($_SESSION['user_id'], $id, 'status_updated', 'Status changed to ' . $status);
@@ -44,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_incident'])) {
         'title'         => sanitize($_POST['title']),
         'description'   => sanitize($_POST['description']),
         'location'      => sanitize($_POST['location']),
-        'latitude'      => !empty($_POST['latitude']) ? (float)$_POST['latitude'] : null,
+        'latitude'      => !empty($_POST['latitude'])  ? (float)$_POST['latitude']  : null,
         'longitude'     => !empty($_POST['longitude']) ? (float)$_POST['longitude'] : null,
         'status'        => sanitize($_POST['status']),
         'priority'      => sanitize($_POST['priority']),
@@ -67,10 +67,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_incident'])) {
 
 // Filters
 $filter_status = sanitize($_GET['status'] ?? 'all');
-$filter_type   = sanitize($_GET['type'] ?? 'all');
+$filter_type   = sanitize($_GET['type']   ?? 'all');
 $search        = sanitize($_GET['search'] ?? '');
 
-$where = "1=1";
+$where  = "1=1";
 $params = [];
 
 if ($filter_status !== 'all') {
@@ -91,14 +91,13 @@ $incidents = $db->fetchAll("
     SELECT i.*, t.team_name, u.full_name AS reporter
     FROM incidents i
     LEFT JOIN teams t ON i.assigned_team = t.team_id
-    LEFT JOIN users u ON i.reported_by = u.user_id
+    LEFT JOIN users u ON i.reported_by   = u.user_id
     WHERE $where
     ORDER BY FIELD(i.status,'critical','active','pending','resolved'), i.created_at DESC
 ", $params);
 
 $teams = $db->fetchAll("SELECT team_id, team_name, team_type, status FROM teams ORDER BY team_name");
 
-// Edit data
 $edit_incident = null;
 if (isset($_GET['edit'])) {
     $edit_incident = $db->fetchOne("SELECT * FROM incidents WHERE incident_id = ?", [(int)$_GET['edit']]);
@@ -109,8 +108,8 @@ if (isset($_GET['edit'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo $page_title; ?> - FlashCru</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <title><?php echo $page_title; ?> — FlashCru</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/css/main.css">
 </head>
 <body>
@@ -123,58 +122,54 @@ if (isset($_GET['edit'])) {
             <!-- Page Header -->
             <div class="flex-between mb-20">
                 <div>
-                    <h2 style="font-size:22px;font-weight:800;">🚨 Incidents</h2>
-                    <p class="text-muted" style="font-size:13px;">Manage all emergency incidents</p>
+                    <h2 style="font-size:22px;font-weight:800;color:var(--navy);">🚨 Incidents</h2>
+                    <p class="text-muted" style="font-size:13px;margin-top:3px;">Manage all emergency incidents</p>
                 </div>
-                <button class="btn btn-primary" onclick="openModal('incidentModal')">
-                    + New Incident
-                </button>
+                <?php if (isAdmin() || isDispatcher()): ?>
+                <button class="btn btn-primary" onclick="openModal('incidentModal')">+ New Incident</button>
+                <?php endif; ?>
             </div>
 
-            <!-- Success Message -->
             <?php if (isset($_GET['msg'])): ?>
-                <div class="alert alert-success">
-                    ✅ Incident <?php echo htmlspecialchars($_GET['msg']); ?> successfully!
-                </div>
+            <div class="alert alert-success">✅ Incident <?php echo htmlspecialchars($_GET['msg']); ?> successfully!</div>
             <?php endif; ?>
 
-            <!-- Filters -->
-            <div class="panel mb-20" style="padding: 16px 20px;">
-                <form method="GET" style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
-                    <input type="text" name="search" class="form-control" 
-                           placeholder="🔍 Search incidents..." 
+            <!-- Filter Bar -->
+            <div class="panel mb-24" style="padding:16px 20px;">
+                <form method="GET" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+                    <input type="text" name="search" class="form-control"
+                           placeholder="🔍 Search incidents..."
                            value="<?php echo htmlspecialchars($search); ?>"
                            style="max-width:220px;">
 
                     <select name="status" class="form-control" style="max-width:150px;">
                         <option value="all">All Status</option>
-                        <option value="critical" <?php echo $filter_status=='critical'?'selected':''; ?>>Critical</option>
-                        <option value="active"   <?php echo $filter_status=='active'?'selected':''; ?>>Active</option>
-                        <option value="pending"  <?php echo $filter_status=='pending'?'selected':''; ?>>Pending</option>
-                        <option value="resolved" <?php echo $filter_status=='resolved'?'selected':''; ?>>Resolved</option>
+                        <option value="critical" <?php echo $filter_status==='critical'?'selected':''; ?>>🚨 Critical</option>
+                        <option value="active"   <?php echo $filter_status==='active'?'selected':''; ?>>⚡ Active</option>
+                        <option value="pending"  <?php echo $filter_status==='pending'?'selected':''; ?>>⏳ Pending</option>
+                        <option value="resolved" <?php echo $filter_status==='resolved'?'selected':''; ?>>✅ Resolved</option>
                     </select>
 
                     <select name="type" class="form-control" style="max-width:150px;">
                         <option value="all">All Types</option>
-                        <option value="fire"     <?php echo $filter_type=='fire'?'selected':''; ?>>🔥 Fire</option>
-                        <option value="medical"  <?php echo $filter_type=='medical'?'selected':''; ?>>🚑 Medical</option>
-                        <option value="accident" <?php echo $filter_type=='accident'?'selected':''; ?>>🚗 Accident</option>
-                        <option value="rescue"   <?php echo $filter_type=='rescue'?'selected':''; ?>>🚒 Rescue</option>
-                        <option value="other"    <?php echo $filter_type=='other'?'selected':''; ?>>⚠️ Other</option>
+                        <option value="fire"     <?php echo $filter_type==='fire'?'selected':''; ?>>🔥 Fire</option>
+                        <option value="medical"  <?php echo $filter_type==='medical'?'selected':''; ?>>🚑 Medical</option>
+                        <option value="accident" <?php echo $filter_type==='accident'?'selected':''; ?>>🚗 Accident</option>
+                        <option value="rescue"   <?php echo $filter_type==='rescue'?'selected':''; ?>>🚒 Rescue</option>
+                        <option value="other"    <?php echo $filter_type==='other'?'selected':''; ?>>⚠️ Other</option>
                     </select>
 
                     <button type="submit" class="btn btn-primary btn-sm">Filter</button>
-                    <a href="incidents.php" class="btn btn-secondary btn-sm">Reset</a>
+                    <a href="incidents.php"  class="btn btn-secondary btn-sm">Reset</a>
                 </form>
             </div>
 
             <!-- Incidents Table -->
             <div class="panel">
                 <div class="panel-header">
-                    <h3 class="panel-title">
-                        All Incidents 
-                        <span style="font-size:13px;color:#6B7280;font-weight:400;">
-                            (<?php echo count($incidents); ?> results)
+                    <h3 class="panel-title">📋 All Incidents
+                        <span style="font-size:13px;color:var(--gray-400);font-weight:400;">
+                            (<?php echo count($incidents); ?> result<?php echo count($incidents) !== 1 ? 's' : ''; ?>)
                         </span>
                     </h3>
                 </div>
@@ -183,7 +178,7 @@ if (isset($_GET['edit'])) {
                         <thead>
                             <tr>
                                 <th>ID</th>
-                                <th>Title & Location</th>
+                                <th>Title &amp; Location</th>
                                 <th>Type</th>
                                 <th>Status</th>
                                 <th>Priority</th>
@@ -194,53 +189,60 @@ if (isset($_GET['edit'])) {
                         </thead>
                         <tbody>
                             <?php if (empty($incidents)): ?>
-                                <tr><td colspan="8">
-                                    <div class="empty-state">
-                                        <p>No incidents found</p>
-                                    </div>
-                                </td></tr>
+                            <tr><td colspan="8">
+                                <div class="empty-state">No incidents found matching your filters.</div>
+                            </td></tr>
                             <?php else: ?>
-                                <?php foreach ($incidents as $inc): ?>
-                                <tr>
-                                    <td class="text-muted">#<?php echo $inc['incident_id']; ?></td>
-                                    <td>
-                                        <strong><?php echo htmlspecialchars($inc['title']); ?></strong>
-                                        <br>
-                                        <small class="text-muted">📍 <?php echo htmlspecialchars($inc['location']); ?></small>
-                                    </td>
-                                    <td>
-                                        <?php
-                                        $icons = ['fire'=>'🔥','medical'=>'🚑','accident'=>'🚗','rescue'=>'🚒','other'=>'⚠️'];
-                                        echo ($icons[$inc['incident_type']] ?? '⚠️') . ' ' . ucfirst($inc['incident_type']);
-                                        ?>
-                                    </td>
-                                    <td><span class="badge badge-<?php echo $inc['status']; ?>"><?php echo ucfirst($inc['status']); ?></span></td>
-                                    <td><span class="badge badge-<?php echo $inc['priority']; ?>"><?php echo ucfirst($inc['priority']); ?></span></td>
-                                    <td class="text-muted"><?php echo $inc['team_name'] ?? '<span style="color:#6B7280">Unassigned</span>'; ?></td>
-                                    <td class="text-muted" style="font-size:12px;"><?php echo date('M j, Y', strtotime($inc['created_at'])); ?></td>
-                                    <td>
-                                        <div class="flex gap-8">
-                                            <a href="incidents.php?edit=<?php echo $inc['incident_id']; ?>" class="btn btn-secondary btn-sm">✏️</a>
-                                            <?php if (isAdmin()): ?>
-                                            <a href="incidents.php?delete=<?php echo $inc['incident_id']; ?>" 
-                                               class="btn btn-danger btn-sm"
-                                               onclick="return confirm('Delete this incident?')">🗑️</a>
-                                            <?php endif; ?>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <?php endforeach; ?>
+                            <?php
+                            $type_icons   = ['fire'=>'🔥','medical'=>'🚑','rescue'=>'🚒','accident'=>'🚗','other'=>'⚠️'];
+                            $type_classes = ['fire'=>'fire','medical'=>'medical','rescue'=>'rescue','accident'=>'accident','other'=>'other'];
+                            foreach ($incidents as $inc):
+                                $icon   = $type_icons[$inc['incident_type']] ?? '⚠️';
+                                $tclass = $type_classes[$inc['incident_type']] ?? 'other';
+                            ?>
+                            <tr>
+                                <td><span class="incident-id">#<?php echo $inc['incident_id']; ?></span></td>
+                                <td>
+                                    <div class="incident-title"><?php echo htmlspecialchars($inc['title']); ?></div>
+                                    <div class="incident-addr">📍 <?php echo htmlspecialchars($inc['location']); ?></div>
+                                </td>
+                                <td><span class="type-badge <?php echo $tclass; ?>"><?php echo $icon; ?> <?php echo ucfirst($inc['incident_type']); ?></span></td>
+                                <td><span class="badge badge-<?php echo $inc['status']; ?>"><?php echo strtoupper($inc['status']); ?></span></td>
+                                <td><span class="priority-badge <?php echo strtoupper($inc['priority']); ?>"><?php echo strtoupper($inc['priority']); ?></span></td>
+                                <td>
+                                    <?php if ($inc['team_name']): ?>
+                                        <span class="team-text"><?php echo htmlspecialchars($inc['team_name']); ?></span>
+                                    <?php else: ?>
+                                        <span class="team-unassigned">Unassigned</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td class="text-muted" style="font-size:12px;white-space:nowrap;">
+                                    <?php echo date('M j, Y', strtotime($inc['created_at'])); ?>
+                                </td>
+                                <td>
+                                    <div class="flex gap-8">
+                                        <a href="incidents.php?edit=<?php echo $inc['incident_id']; ?>" class="btn btn-secondary btn-sm">✏️</a>
+                                        <?php if (isAdmin()): ?>
+                                        <a href="incidents.php?delete=<?php echo $inc['incident_id']; ?>"
+                                           class="btn btn-danger btn-sm"
+                                           onclick="return confirm('Delete this incident?')">🗑️</a>
+                                        <?php endif; ?>
+                                    </div>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
                             <?php endif; ?>
                         </tbody>
                     </table>
                 </div>
             </div>
-        </div>
-    </div>
-</div>
 
-<!-- Add/Edit Incident Modal -->
-<div class="modal-overlay <?php echo ($edit_incident) ? 'active' : ''; ?>" id="incidentModal">
+        </div><!-- /page-content -->
+    </div><!-- /main-content -->
+</div><!-- /dashboard-wrapper -->
+
+<!-- ── Add / Edit Incident Modal ─────────────────────────────── -->
+<div class="modal-overlay <?php echo $edit_incident ? 'active' : ''; ?>" id="incidentModal">
     <div class="modal-box">
         <div class="modal-header">
             <h3 class="modal-title"><?php echo $edit_incident ? '✏️ Edit Incident' : '+ New Incident'; ?></h3>
@@ -305,22 +307,22 @@ if (isset($_GET['edit'])) {
                     <div class="form-group">
                         <label class="form-label">Status *</label>
                         <select name="status" class="form-control" required>
-                            <option value="pending"  <?php echo ($edit_incident['status']??'pending')==='pending'?'selected':''; ?>>Pending</option>
-                            <option value="active"   <?php echo ($edit_incident['status']??'')==='active'?'selected':''; ?>>Active</option>
-                            <option value="critical" <?php echo ($edit_incident['status']??'')==='critical'?'selected':''; ?>>Critical</option>
-                            <option value="resolved" <?php echo ($edit_incident['status']??'')==='resolved'?'selected':''; ?>>Resolved</option>
+                            <option value="pending"  <?php echo ($edit_incident['status']??'pending')==='pending'?'selected':''; ?>>⏳ Pending</option>
+                            <option value="active"   <?php echo ($edit_incident['status']??'')==='active'?'selected':''; ?>>⚡ Active</option>
+                            <option value="critical" <?php echo ($edit_incident['status']??'')==='critical'?'selected':''; ?>>🚨 Critical</option>
+                            <option value="resolved" <?php echo ($edit_incident['status']??'')==='resolved'?'selected':''; ?>>✅ Resolved</option>
                         </select>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Assign Team</label>
                         <select name="assigned_team" class="form-control">
-                            <option value="">-- No Team --</option>
+                            <option value="">— No Team —</option>
                             <?php foreach ($teams as $team): ?>
-                                <option value="<?php echo $team['team_id']; ?>"
-                                    <?php echo ($edit_incident['assigned_team']??0)==$team['team_id']?'selected':''; ?>>
-                                    <?php echo htmlspecialchars($team['team_name']); ?>
-                                    (<?php echo $team['status']; ?>)
-                                </option>
+                            <option value="<?php echo $team['team_id']; ?>"
+                                <?php echo ($edit_incident['assigned_team']??0)==$team['team_id']?'selected':''; ?>>
+                                <?php echo htmlspecialchars($team['team_name']); ?>
+                                (<?php echo $team['status']; ?>)
+                            </option>
                             <?php endforeach; ?>
                         </select>
                     </div>
@@ -343,12 +345,10 @@ if (isset($_GET['edit'])) {
 </div>
 
 <script>
-function openModal(id) { document.getElementById(id).classList.add('active'); }
-function closeModal(id) { 
+function openModal(id)  { document.getElementById(id).classList.add('active'); }
+function closeModal(id) {
     document.getElementById(id).classList.remove('active');
-    <?php if ($edit_incident): ?>
-    window.location.href = 'incidents.php';
-    <?php endif; ?>
+    <?php if ($edit_incident): ?>window.location.href = 'incidents.php';<?php endif; ?>
 }
 </script>
 </body>
