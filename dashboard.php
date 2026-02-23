@@ -4,518 +4,204 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard — FlashCru Emergency Response</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/main.css">
 <style>
-  /* ── Dashboard-specific overrides ── */
   :root {
-    --critical: #DC2626;
-    --active:   #D97706;
-    --pending:  #7C3AED;
-    --resolved: #16A34A;
-    --fire:     #EA580C;
-    --medical:  #0891B2;
-    --rescue:   #1D4ED8;
-    --accident: #7C3AED;
+    --critical: #E53935;
+    --active:   #E9A016;
+    --pending:  #6C4FDB;
+    --resolved: #2E9E6B;
   }
 
-  body {
-    background: #F5F7FA;
-    color: #0F172A;
-    display: flex;
-  }
+  body { background: var(--bg); color: var(--text-primary); display: flex; }
 
-  /* Sidebar overrides for standalone page */
-  .sidebar {
-    width: 240px;
-    min-height: 100vh;
-    background: #0F172A;
-    border-right: none;
-    display: flex;
-    flex-direction: column;
-    flex-shrink: 0;
-    position: fixed;
-    top: 0; left: 0;
-    height: 100%;
-    z-index: 100;
-    box-shadow: 2px 0 12px rgba(0,0,0,0.12);
-  }
+  /* Sidebar standalone styles */
+  .sidebar { width: var(--sidebar-w); min-height: 100vh; background: var(--navy); border-right: none; display: flex; flex-direction: column; flex-shrink: 0; position: fixed; top: 0; left: 0; height: 100%; z-index: 100; box-shadow: 4px 0 24px rgba(26,35,64,0.18); }
 
-  .logo {
-    padding: 20px;
-    border-bottom: 1px solid rgba(255,255,255,0.07);
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .logo-icon {
-    width: 36px; height: 36px;
-    border-radius: 8px;
-    overflow: hidden;
-    flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center;
-    background: #DC2626;
-  }
-
+  .logo { padding: 22px 20px 18px; border-bottom: 1px solid rgba(255,255,255,0.07); display: flex; align-items: center; gap: 12px; }
+  .logo-icon { width: 40px; height: 40px; border-radius: 12px; overflow: hidden; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #E53935, #C62828); box-shadow: 0 4px 12px rgba(229,57,53,0.40); }
   .logo-icon img { width: 100%; height: 100%; object-fit: contain; }
-  .logo-icon-text { font-size: 18px; }
+  .logo-icon-text { font-size: 20px; }
+  .logo-text { font-weight: 800; font-size: 17px; color: #FFFFFF; letter-spacing: -0.3px; }
+  .logo-sub  { font-size: 10px; color: rgba(255,255,255,0.38); font-weight: 400; letter-spacing: 0.07em; margin-top: 1px; }
 
-  .logo-text { font-weight: 800; font-size: 16px; color: #FFFFFF; line-height: 1.2; }
-  .logo-sub  { font-size: 10px; color: rgba(255,255,255,0.4); font-weight: 400; letter-spacing: 0.06em; }
+  .nav { padding: 14px 12px; flex: 1; }
 
-  .nav { padding: 10px 12px; flex: 1; }
-
-  .nav-item {
-    display: flex; align-items: center; gap: 10px;
-    padding: 10px 12px;
-    border-radius: 8px;
-    cursor: pointer;
-    color: rgba(255,255,255,0.55);
-    font-size: 13.5px;
-    font-weight: 500;
-    transition: background 0.15s, color 0.15s;
-    margin-bottom: 2px;
-    user-select: none;
-  }
-
+  .nav-item { display: flex; align-items: center; gap: 11px; padding: 10px 12px; border-radius: 10px; cursor: pointer; color: rgba(255,255,255,0.50); font-size: 13.5px; font-weight: 500; transition: all 0.22s; margin-bottom: 2px; user-select: none; position: relative; text-decoration: none; }
   .nav-item:hover { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.85); }
-  .nav-item.active { background: rgba(29,78,216,0.35); color: #FFFFFF; font-weight: 600; }
+  .nav-item.active { background: linear-gradient(135deg, rgba(61,90,241,0.30), rgba(61,90,241,0.18)); color: #fff; font-weight: 600; box-shadow: inset 0 0 0 1px rgba(61,90,241,0.30); }
+  .nav-item.active::before { content: ''; position: absolute; left: 0; top: 25%; bottom: 25%; width: 3px; background: var(--indigo); border-radius: 0 3px 3px 0; }
 
-  .nav-badge {
-    margin-left: auto;
-    background: #DC2626;
-    color: white;
-    font-size: 10px;
-    font-weight: 700;
-    padding: 2px 7px;
-    border-radius: 999px;
-  }
+  .nav-badge { margin-left: auto; background: var(--red); color: white; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 99px; animation: pulse-badge 2s ease-in-out infinite; }
+  @keyframes pulse-badge { 0%,100%{box-shadow:0 0 0 0 rgba(229,57,53,0.4)} 50%{box-shadow:0 0 0 4px rgba(229,57,53,0)} }
 
-  .sidebar-bottom {
-    padding: 14px 12px;
-    border-top: 1px solid rgba(255,255,255,0.07);
-  }
-
-  .user-card {
-    display: flex; align-items: center; gap: 10px;
-    padding: 10px 12px;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: background 0.15s;
-  }
+  .sidebar-bottom { padding: 12px; border-top: 1px solid rgba(255,255,255,0.07); }
+  .user-card { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; cursor: pointer; transition: background 0.22s; }
   .user-card:hover { background: rgba(255,255,255,0.06); }
-
-  .user-avatar {
-    width: 34px; height: 34px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #3B82F6, #7C3AED);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 12px; font-weight: 800;
-    color: white;
-    flex-shrink: 0;
-  }
-
+  .user-avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #3D5AF1, #6C4FDB); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; color: white; flex-shrink: 0; box-shadow: 0 3px 8px rgba(61,90,241,0.35); }
   .user-name { font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.85); }
-  .user-role { font-size: 11px; color: rgba(255,255,255,0.4); }
+  .user-role { font-size: 11px; color: rgba(255,255,255,0.38); margin-top: 1px; }
+  .logout-btn { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; color: rgba(229,57,53,0.80); font-size: 13px; font-weight: 600; text-decoration: none; transition: all 0.22s; margin-top: 4px; }
+  .logout-btn:hover { background: rgba(229,57,53,0.15); color: #ff6b6b; }
 
   /* Main */
-  .main {
-    margin-left: 240px;
-    flex: 1;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    background: #F5F7FA;
-  }
+  .main { margin-left: var(--sidebar-w); flex: 1; min-height: 100vh; display: flex; flex-direction: column; background: var(--bg); }
 
   /* Topbar */
-  .topbar {
-    background: #FFFFFF;
-    border-bottom: 1px solid #E2E8F0;
-    padding: 0 28px;
-    height: 60px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    position: sticky;
-    top: 0;
-    z-index: 50;
-    box-shadow: 0 1px 3px rgba(15,23,42,0.05);
-  }
-
+  .topbar { background: var(--white); border-bottom: 1px solid var(--border); padding: 0 32px; height: 64px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; box-shadow: 0 2px 12px rgba(150,170,220,0.12); }
   .topbar-left { display: flex; flex-direction: column; }
-  .page-title  { font-size: 15px; font-weight: 700; color: #0F172A; }
-  .breadcrumb  { font-size: 11px; color: #94A3B8; margin-top: 1px; }
+  .page-title  { font-size: 15px; font-weight: 700; color: var(--text-primary); }
+  .breadcrumb  { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+  .topbar-right { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--text-secondary); }
 
-  .topbar-right {
-    display: flex; align-items: center; gap: 14px;
-    font-size: 12px; color: #64748B;
-  }
+  #clock { font-weight: 500; padding: 6px 12px; background: var(--bg); border-radius: 10px; box-shadow: var(--neu-inset); font-size: 12px; }
 
-  /* Tab Nav */
-  .tabs-nav {
-    background: #FFFFFF;
-    border-bottom: 1px solid #E2E8F0;
-    padding: 0 28px;
-    display: flex;
-  }
+  .notif-btn { width: 36px; height: 36px; border-radius: 10px; background: var(--bg); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; box-shadow: var(--neu-card); transition: all 0.22s; }
+  .notif-btn:hover { box-shadow: var(--neu-hover); transform: translateY(-1px); }
 
-  .tab-btn {
-    padding: 14px 20px;
-    font-family: 'Inter', sans-serif;
-    font-size: 13px;
-    font-weight: 500;
-    color: #94A3B8;
-    background: none;
-    border: none;
-    cursor: pointer;
-    border-bottom: 2px solid transparent;
-    transition: color 0.15s, border-color 0.15s;
-    display: flex; align-items: center; gap: 7px;
-    white-space: nowrap;
-  }
+  /* Tabs */
+  .tabs-nav { background: var(--white); border-bottom: 1px solid var(--border); padding: 0 32px; display: flex; gap: 2px; box-shadow: 0 2px 8px rgba(150,170,220,0.07); }
+  .tab-btn { padding: 16px 20px; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; color: var(--text-muted); background: none; border: none; cursor: pointer; border-bottom: 2.5px solid transparent; transition: all 0.22s; display: flex; align-items: center; gap: 7px; white-space: nowrap; }
+  .tab-btn:hover { color: var(--text-primary); }
+  .tab-btn.active { color: var(--indigo); border-bottom-color: var(--indigo); font-weight: 700; }
 
-  .tab-btn:hover { color: #0F172A; }
-  .tab-btn.active { color: #1D4ED8; border-bottom-color: #1D4ED8; font-weight: 600; }
-
-  /* Content */
-  .content { padding: 28px; flex: 1; }
-
+  /* Content area */
+  .content { padding: 28px 32px; flex: 1; }
   .tab-panel { display: none; }
-  .tab-panel.active { display: block; }
+  .tab-panel.active { display: block; animation: fadeUp 0.25s ease; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
   /* Greeting */
-  .greeting { margin-bottom: 24px; }
-  .greeting h1 {
-    font-size: 22px; font-weight: 800;
-    color: #0F172A;
-    display: flex; align-items: center; gap: 8px;
-    letter-spacing: -0.3px;
-  }
-  .greeting p { color: #64748B; font-size: 13px; margin-top: 4px; }
+  .greeting { margin-bottom: 28px; }
+  .greeting h1 { font-size: 24px; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 8px; letter-spacing: -0.4px; }
+  .greeting p  { color: var(--text-secondary); font-size: 13px; margin-top: 4px; }
 
-  /* KPI cards grid */
-  .cards-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
-    margin-bottom: 24px;
-  }
+  /* KPI grid */
+  .cards-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-bottom: 28px; }
 
-  .stat-card {
-    background: #FFFFFF;
-    border: 1px solid #E2E8F0;
-    border-radius: 14px;
-    padding: 20px 22px;
-    position: relative;
-    overflow: hidden;
-    box-shadow: 0 1px 3px rgba(15,23,42,0.05);
-    transition: box-shadow 0.2s, transform 0.2s;
-  }
+  .stat-card { background: var(--white); border-radius: var(--radius); padding: 22px 22px 20px; position: relative; overflow: hidden; box-shadow: var(--neu-card); border: 1px solid rgba(255,255,255,0.70); transition: all 0.22s; }
+  .stat-card:hover { box-shadow: var(--neu-hover); transform: translateY(-2px); }
+  .stat-card::after { content:''; position:absolute; top:0; left:0; right:0; height:3px; border-radius: var(--radius) var(--radius) 0 0; }
+  .stat-card.critical::after { background: linear-gradient(90deg, #E53935, #FF5252); }
+  .stat-card.active-c::after { background: linear-gradient(90deg, #E9A016, #FFB74D); }
+  .stat-card.pending::after  { background: linear-gradient(90deg, #6C4FDB, #9575CD); }
+  .stat-card.resolved::after { background: linear-gradient(90deg, #2E9E6B, #66BB6A); }
+  .stat-card.teams::after    { background: linear-gradient(90deg, #2979D9, #64B5F6); }
+  .stat-card.total::after    { background: linear-gradient(90deg, #5A6787, #8E9BBE); }
+  .stat-card.today::after    { background: linear-gradient(90deg, #0BA5C4, #4DD0E1); }
+  .stat-card.tteams::after   { background: linear-gradient(90deg, #6C4FDB, #CE93D8); }
 
-  .stat-card:hover {
-    box-shadow: 0 4px 16px rgba(15,23,42,0.09);
-    transform: translateY(-1px);
-  }
+  .card-icon-box { width: 40px; height: 40px; border-radius: 11px; display: flex; align-items: center; justify-content: center; font-size: 18px; margin-bottom: 16px; box-shadow: var(--neu-inset); }
+  .card-icon-box.red    { background: var(--red-light); }
+  .card-icon-box.amber  { background: var(--amber-light); }
+  .card-icon-box.purple { background: var(--purple-light); }
+  .card-icon-box.green  { background: var(--green-light); }
+  .card-icon-box.blue   { background: var(--blue-light); }
+  .card-icon-box.slate  { background: var(--bg-mid); }
+  .card-icon-box.cyan   { background: var(--cyan-light); }
 
-  .stat-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 3px;
-    border-radius: 14px 14px 0 0;
-  }
+  .card-label { font-size: 10.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+  .card-value { font-size: 36px; font-weight: 800; line-height: 1; }
+  .card-value.critical { color: var(--red); }
+  .card-value.active-c { color: var(--amber); }
+  .card-value.pending  { color: var(--purple); }
+  .card-value.resolved { color: var(--green); }
+  .card-value.teams    { color: var(--blue); }
+  .card-value.total    { color: var(--text-primary); }
+  .card-value.today    { color: var(--cyan); }
+  .card-value.tteams   { color: var(--purple); }
 
-  .stat-card.critical::before  { background: #DC2626; }
-  .stat-card.active-c::before  { background: #D97706; }
-  .stat-card.pending::before   { background: #7C3AED; }
-  .stat-card.resolved::before  { background: #16A34A; }
-  .stat-card.teams::before     { background: #2563EB; }
-  .stat-card.total::before     { background: #64748B; }
-  .stat-card.today::before     { background: #0891B2; }
-  .stat-card.tteams::before    { background: #7C3AED; }
-
-  .card-icon-box {
-    width: 36px; height: 36px;
-    border-radius: 8px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 17px;
-    margin-bottom: 14px;
-  }
-
-  .card-icon-box.red    { background: #FEF2F2; }
-  .card-icon-box.amber  { background: #FFFBEB; }
-  .card-icon-box.purple { background: #F5F3FF; }
-  .card-icon-box.green  { background: #F0FDF4; }
-  .card-icon-box.blue   { background: #EFF6FF; }
-  .card-icon-box.slate  { background: #F1F5F9; }
-  .card-icon-box.cyan   { background: #ECFEFF; }
-
-  .card-label {
-    font-size: 11px;
-    font-weight: 600;
-    color: #94A3B8;
-    text-transform: uppercase;
-    letter-spacing: 0.07em;
-    margin-bottom: 6px;
-  }
-
-  .card-value {
-    font-size: 34px;
-    font-weight: 800;
-    line-height: 1;
-    font-family: 'Inter', sans-serif;
-  }
-
-  .card-value.critical { color: #DC2626; }
-  .card-value.active-c { color: #D97706; }
-  .card-value.pending  { color: #7C3AED; }
-  .card-value.resolved { color: #16A34A; }
-  .card-value.teams    { color: #2563EB; }
-  .card-value.total    { color: #0F172A; }
-  .card-value.today    { color: #0891B2; }
-  .card-value.tteams   { color: #7C3AED; }
-
-  /* Quick Nav card */
-  .quick-nav {
-    background: #FFFFFF;
-    border: 1px solid #E2E8F0;
-    border-radius: 14px;
-    padding: 28px;
-    text-align: center;
-    box-shadow: 0 1px 3px rgba(15,23,42,0.05);
-    margin-top: 4px;
-  }
-
-  .quick-nav h3 { font-size: 16px; font-weight: 700; color: #0F172A; margin-bottom: 6px; }
-  .quick-nav p  { font-size: 13px; color: #64748B; margin-bottom: 20px; }
-
-  .quick-nav-btns {
-    display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;
-  }
-
-  .qbtn {
-    padding: 9px 20px;
-    border-radius: 8px;
-    font-family: 'Inter', sans-serif;
-    font-weight: 600;
-    font-size: 13px;
-    cursor: pointer;
-    border: 1.5px solid;
-    transition: transform 0.1s, box-shadow 0.15s;
-  }
-  .qbtn:hover { transform: translateY(-1px); }
-
-  .qbtn-blue   { background: #EFF6FF; color: #1D4ED8; border-color: #BFDBFE; }
-  .qbtn-green  { background: #F0FDF4; color: #16A34A; border-color: #BBF7D0; }
-  .qbtn-purple { background: #F5F3FF; color: #7C3AED; border-color: #DDD6FE; }
+  /* Quick nav */
+  .quick-nav { background: var(--white); border-radius: var(--radius); padding: 36px 32px; text-align: center; box-shadow: var(--neu-card); border: 1px solid rgba(255,255,255,0.65); margin-top: 4px; }
+  .quick-nav h3 { font-size: 17px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; }
+  .quick-nav p  { font-size: 13px; color: var(--text-secondary); margin-bottom: 24px; }
+  .quick-nav-btns { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
+  .qbtn { padding: 10px 22px; border-radius: 10px; font-family: 'DM Sans', sans-serif; font-weight: 600; font-size: 13px; cursor: pointer; border: 1.5px solid; transition: all 0.22s; box-shadow: var(--neu-card); }
+  .qbtn:hover { transform: translateY(-2px); box-shadow: var(--neu-hover); }
+  .qbtn-blue   { background: var(--blue-light);   color: var(--blue);   border-color: rgba(41,121,217,0.20); }
+  .qbtn-green  { background: var(--green-light);  color: var(--green);  border-color: rgba(46,158,107,0.20); }
+  .qbtn-purple { background: var(--purple-light); color: var(--purple); border-color: rgba(108,79,219,0.20); }
 
   /* Section header */
-  .section-header {
-    display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 16px;
-  }
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+  .section-title  { font-size: 15px; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 8px; }
+  .view-all { font-size: 12px; color: var(--indigo); font-weight: 600; background: var(--indigo-light); border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; padding: 6px 14px; border-radius: 8px; transition: all 0.22s; text-decoration: none; }
+  .view-all:hover { background: var(--indigo); color: white; }
 
-  .section-title {
-    font-size: 15px; font-weight: 700; color: #0F172A;
-    display: flex; align-items: center; gap: 8px;
-  }
-
-  .view-all {
-    font-size: 12px; color: #1D4ED8; font-weight: 600;
-    background: none; border: none; cursor: pointer;
-    font-family: 'Inter', sans-serif; padding: 0;
-  }
-  .view-all:hover { text-decoration: underline; }
-
-  /* Incidents table */
-  .table-wrap {
-    background: #FFFFFF;
-    border: 1px solid #E2E8F0;
-    border-radius: 14px;
-    overflow: hidden;
-    box-shadow: 0 1px 3px rgba(15,23,42,0.05);
-  }
-
+  /* Table */
+  .table-wrap { background: var(--white); border-radius: var(--radius); overflow: hidden; box-shadow: var(--neu-card); border: 1px solid rgba(255,255,255,0.65); }
   .table-wrap table { width: 100%; border-collapse: collapse; }
-
-  .table-wrap thead th {
-    padding: 11px 16px;
-    text-align: left;
-    font-size: 11px; font-weight: 700;
-    text-transform: uppercase; letter-spacing: 0.07em;
-    color: #94A3B8;
-    background: #F8FAFC;
-    border-bottom: 1px solid #E2E8F0;
-    white-space: nowrap;
-  }
-
-  .table-wrap tbody tr {
-    border-bottom: 1px solid #F0F4F8;
-    transition: background 0.12s;
-    cursor: pointer;
-  }
-
+  .table-wrap thead th { padding: 12px 18px; text-align: left; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); background: var(--bg); border-bottom: 1px solid var(--border); white-space: nowrap; }
+  .table-wrap tbody tr { border-bottom: 1px solid rgba(200,215,240,0.18); transition: background 0.15s; cursor: pointer; }
   .table-wrap tbody tr:last-child { border-bottom: none; }
-  .table-wrap tbody tr:hover { background: #F8FAFC; }
+  .table-wrap tbody tr:hover { background: rgba(238,241,255,0.50); }
+  .table-wrap tbody td { padding: 13px 18px; font-size: 13px; color: var(--text-primary); vertical-align: middle; }
 
-  .table-wrap tbody td {
-    padding: 12px 16px;
-    font-size: 13px;
-    color: #0F172A;
-    vertical-align: middle;
-  }
-
-  .incident-id        { font-size: 11px; font-weight: 600; color: #94A3B8; }
-  .incident-title     { font-weight: 600; font-size: 13px; color: #0F172A; line-height: 1.4; }
-  .incident-addr      { font-size: 11px; color: #94A3B8; margin-top: 2px; }
+  .incident-id    { font-size: 11px; font-weight: 600; color: var(--text-muted); }
+  .incident-title { font-weight: 600; font-size: 13px; color: var(--text-primary); line-height: 1.4; }
+  .incident-addr  { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
 
   /* Type badges */
-  .type-badge {
-    display: inline-flex; align-items: center; gap: 4px;
-    font-size: 11px; font-weight: 600;
-    padding: 3px 9px; border-radius: 6px;
-  }
-  .type-badge.fire     { background: #FFF7ED; color: #C2410C; }
-  .type-badge.medical  { background: #ECFEFF; color: #0891B2; }
-  .type-badge.rescue   { background: #EFF6FF; color: #1D4ED8; }
-  .type-badge.accident { background: #F5F3FF; color: #7C3AED; }
+  .type-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 8px; }
+  .type-badge.fire     { background: #FFF3ED; color: #C2410C; }
+  .type-badge.medical  { background: var(--cyan-light); color: var(--cyan); }
+  .type-badge.rescue   { background: var(--blue-light); color: var(--blue); }
+  .type-badge.accident { background: var(--purple-light); color: var(--purple); }
 
   /* Status badges */
-  .status-badge {
-    display: inline-block;
-    padding: 3px 9px;
-    border-radius: 999px;
-    font-size: 10px; font-weight: 700;
-    text-transform: uppercase; letter-spacing: 0.04em;
-  }
-  .status-badge.CRITICAL { background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA; }
-  .status-badge.ACTIVE   { background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE; }
-  .status-badge.PENDING  { background: #FFFBEB; color: #D97706; border: 1px solid #FDE68A; }
-  .status-badge.RESOLVED { background: #F0FDF4; color: #16A34A; border: 1px solid #BBF7D0; }
+  .status-badge { display: inline-block; padding: 4px 10px; border-radius: 99px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+  .status-badge.CRITICAL { background: var(--red-light);    color: var(--red);    box-shadow: inset 0 0 0 1px rgba(229,57,53,0.20); }
+  .status-badge.ACTIVE   { background: var(--blue-light);   color: var(--blue);   box-shadow: inset 0 0 0 1px rgba(41,121,217,0.20); }
+  .status-badge.PENDING  { background: var(--amber-light);  color: var(--amber);  box-shadow: inset 0 0 0 1px rgba(233,160,22,0.20); }
+  .status-badge.RESOLVED { background: var(--green-light);  color: var(--green);  box-shadow: inset 0 0 0 1px rgba(46,158,107,0.20); }
 
-  /* Priority */
   .priority-badge { font-size: 11px; font-weight: 700; }
-  .priority-badge.CRITICAL { color: #DC2626; }
-  .priority-badge.HIGH     { color: #D97706; }
-  .priority-badge.MEDIUM   { color: #CA8A04; }
-  .priority-badge.LOW      { color: #94A3B8; }
+  .priority-badge.CRITICAL { color: var(--red); }
+  .priority-badge.HIGH     { color: var(--amber); }
+  .priority-badge.MEDIUM   { color: var(--cyan); }
+  .priority-badge.LOW      { color: var(--text-muted); }
 
-  .team-text       { font-size: 12px; font-weight: 600; color: #0F172A; }
-  .team-unassigned { font-size: 12px; color: #94A3B8; font-style: italic; }
+  .team-text       { font-size: 12px; font-weight: 600; color: var(--text-primary); }
+  .team-unassigned { font-size: 12px; color: var(--text-muted); font-style: italic; }
 
-  /* Teams grid */
-  .teams-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
-  }
+  /* Dashboard teams grid */
+  .teams-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
 
-  .team-card {
-    background: #FFFFFF;
-    border: 1px solid #E2E8F0;
-    border-radius: 14px;
-    padding: 20px;
-    box-shadow: 0 1px 3px rgba(15,23,42,0.05);
-    transition: box-shadow 0.2s, transform 0.2s;
-  }
+  .team-card { background: var(--white); border: 1px solid rgba(255,255,255,0.65); border-radius: var(--radius); padding: 20px; box-shadow: var(--neu-card); transition: all 0.22s; }
+  .team-card:hover { box-shadow: var(--neu-hover); transform: translateY(-2px); }
 
-  .team-card:hover {
-    box-shadow: 0 4px 16px rgba(15,23,42,0.09);
-    transform: translateY(-2px);
-  }
-
-  .team-card-header {
-    display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 16px;
-  }
-
+  .team-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
   .team-name-row { display: flex; align-items: center; gap: 10px; }
 
-  .team-icon {
-    width: 40px; height: 40px;
-    border-radius: 10px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 19px;
-    border: 1px solid #E2E8F0;
-  }
+  .team-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 19px; box-shadow: var(--neu-inset); }
+  .team-icon.fire    { background: #FFF3ED; }
+  .team-icon.medical { background: var(--cyan-light); }
+  .team-icon.rescue  { background: var(--blue-light); }
+  .team-icon.police  { background: var(--purple-light); }
 
-  .team-icon.fire    { background: #FFF7ED; }
-  .team-icon.medical { background: #ECFEFF; }
-  .team-icon.rescue  { background: #EFF6FF; }
-  .team-icon.police  { background: #F5F3FF; }
+  .team-card-name { font-weight: 700; font-size: 14px; color: var(--text-primary); }
+  .team-card-type { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
 
-  .team-card-name { font-weight: 700; font-size: 14px; color: #0F172A; }
-  .team-card-type { font-size: 11px; color: #94A3B8; }
+  .avail-pill { font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 99px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .avail-pill.available { background: var(--green-light); color: var(--green); box-shadow: inset 0 0 0 1px rgba(46,158,107,0.20); }
+  .avail-pill.on-call   { background: var(--amber-light); color: var(--amber); box-shadow: inset 0 0 0 1px rgba(233,160,22,0.20); }
+  .avail-pill.busy      { background: var(--red-light);   color: var(--red);   box-shadow: inset 0 0 0 1px rgba(229,57,53,0.20); }
 
-  .avail-pill {
-    font-size: 10px; font-weight: 700;
-    padding: 3px 10px;
-    border-radius: 999px;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-  }
+  .team-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; border-top: 1px solid var(--border); padding-top: 14px; }
+  .team-stat-label { font-size: 10px; color: var(--text-muted); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .team-stat-val   { font-size: 22px; font-weight: 800; }
 
-  .avail-pill.available { background: #F0FDF4; color: #16A34A; border: 1px solid #BBF7D0; }
-  .avail-pill.on-call   { background: #FFFBEB; color: #D97706; border: 1px solid #FDE68A; }
-  .avail-pill.busy      { background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA; }
+  /* Map */
+  .map-wrapper { border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); height: 500px; box-shadow: var(--neu-card); }
+  .map-wrapper iframe { width: 100%; height: 100%; border: none; display: block; }
 
-  .team-stats {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-    border-top: 1px solid #F0F4F8;
-    padding-top: 14px;
-  }
+  .map-legend-bar { display: flex; gap: 14px; align-items: center; font-size: 12px; font-weight: 500; color: var(--text-secondary); }
+  .map-legend-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 5px; }
 
-  .team-stat-label {
-    font-size: 10px; color: #94A3B8;
-    margin-bottom: 3px;
-    text-transform: uppercase; letter-spacing: 0.06em;
-  }
-
-  .team-stat-val {
-    font-size: 20px; font-weight: 800;
-    font-family: 'Inter', sans-serif;
-  }
-
-  /* Map wrapper */
-  .map-wrapper {
-    border-radius: 14px;
-    overflow: hidden;
-    border: 1px solid #E2E8F0;
-    height: 500px;
-    box-shadow: 0 1px 3px rgba(15,23,42,0.05);
-  }
-
-  .map-wrapper iframe {
-    width: 100%; height: 100%;
-    border: none; display: block;
-  }
-
-  /* Map legend bar */
-  .map-legend-bar {
-    display: flex; gap: 16px; align-items: center;
-    font-size: 12px; font-weight: 500; color: #475569;
-  }
-
-  .map-legend-dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    display: inline-block;
-    margin-right: 5px;
-  }
-
-  @media (max-width: 1200px) {
-    .cards-grid  { grid-template-columns: repeat(2, 1fr); }
-    .teams-grid  { grid-template-columns: repeat(2, 1fr); }
-  }
-
-  @media (max-width: 700px) {
-    .cards-grid { grid-template-columns: 1fr; }
-    .teams-grid { grid-template-columns: 1fr; }
-  }
+  /* Responsive */
+  @media (max-width: 1280px) { .cards-grid { grid-template-columns: repeat(2, 1fr); } .teams-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 700px)  { .cards-grid { grid-template-columns: 1fr; } .teams-grid { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
@@ -533,32 +219,37 @@
   </div>
 
   <nav class="nav">
-    <div class="nav-item active" onclick="setNav(this)">
-      <span>▪</span> Dashboard
-    </div>
-    <div class="nav-item" onclick="setNav(this)">
-      <span>🔔</span> Incidents
+    <a class="nav-item active" href="dashboard.php">
+      <span style="font-size:15px;">⬛</span> Dashboard
+    </a>
+    <a class="nav-item" href="incidents.php">
+      <span style="font-size:15px;">🔔</span> Incidents
       <span class="nav-badge">6</span>
-    </div>
-    <div class="nav-item" onclick="setNav(this)">
-      <span>👥</span> Teams
-    </div>
-    <div class="nav-item" onclick="setNav(this)">
-      <span>📊</span> Reports
-    </div>
-    <div class="nav-item" onclick="setNav(this)">
-      <span>⚙</span> Settings
-    </div>
+    </a>
+    <a class="nav-item" href="teams.php">
+      <span style="font-size:15px;">👥</span> Teams
+    </a>
+    <a class="nav-item" href="reports.php">
+      <span style="font-size:15px;">📊</span> Reports
+    </a>
+    <a class="nav-item" href="settings.php">
+      <span style="font-size:15px;">⚙️</span> Settings
+    </a>
   </nav>
 
   <div class="sidebar-bottom">
     <div class="user-card">
-      <div class="user-avatar">SA</div>
-      <div>
-        <div class="user-name">System Admin</div>
-        <div class="user-role">Administrator</div>
+      <div class="user-avatar">
+        <?php echo strtoupper(substr($_SESSION['username'] ?? 'SA', 0, 2)); ?>
+      </div>
+      <div style="flex:1;">
+        <div class="user-name"><?php echo htmlspecialchars($_SESSION['full_name'] ?? 'System Admin'); ?></div>
+        <div class="user-role"><?php echo ucfirst($_SESSION['role'] ?? 'Administrator'); ?></div>
       </div>
     </div>
+    <a href="logout.php" class="logout-btn">
+      <span>🚪</span> Log Out
+    </a>
   </div>
 </aside>
 
@@ -572,15 +263,15 @@
       <div class="breadcrumb">FlashCru / Dashboard</div>
     </div>
     <div class="topbar-right">
-      <span id="clock" style="font-weight:500;"></span>
-      <div style="width:34px;height:34px;border-radius:8px;border:1px solid #E2E8F0;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;color:#64748B;">🔔</div>
-      <div class="user-avatar" style="width:34px;height:34px;font-size:12px;">SA</div>
+      <span id="clock"></span>
+      <button class="notif-btn">🔔</button>
+      <div class="user-avatar" style="width:36px;height:36px;font-size:12px;cursor:pointer;">SA</div>
     </div>
   </header>
 
   <!-- Tabs -->
   <div class="tabs-nav">
-    <button class="tab-btn active" onclick="switchTab('dashboard', this)">▪ Overview</button>
+    <button class="tab-btn active" onclick="switchTab('dashboard', this)">📊 Overview</button>
     <button class="tab-btn" onclick="switchTab('incidents', this)">🔴 Recent Incidents</button>
     <button class="tab-btn" onclick="switchTab('map', this)">🗺 Live Map</button>
     <button class="tab-btn" onclick="switchTab('teams', this)">👥 Team Status</button>
@@ -593,7 +284,7 @@
 
       <div class="greeting">
         <h1 id="greeting-text">Good Day, System! ⚡</h1>
-        <p>Here's what's happening with FlashCru right now. · <span style="color:#1D4ED8;font-weight:600;">Wednesday, February 18, 2026</span></p>
+        <p>Here's what's happening with FlashCru right now. · <span style="color:var(--indigo);font-weight:600;">Wednesday, February 18, 2026</span></p>
       </div>
 
       <div class="cards-grid">
@@ -640,7 +331,7 @@
       </div>
 
       <div class="quick-nav">
-        <div style="font-size:32px;margin-bottom:10px;">📊</div>
+        <div style="font-size:38px;margin-bottom:12px;opacity:0.7;">📡</div>
         <h3>Quick Navigation</h3>
         <p>Use the tabs above to view Recent Incidents, the Live Map, or Team Status.</p>
         <div class="quick-nav-btns">
@@ -662,7 +353,7 @@
     <div class="tab-panel" id="tab-incidents">
       <div class="section-header">
         <div class="section-title">🔴 Recent Incidents</div>
-        <button class="view-all">View All</button>
+        <button class="view-all">View All →</button>
       </div>
 
       <div class="table-wrap">
@@ -670,7 +361,7 @@
           <thead>
             <tr>
               <th>ID</th>
-              <th>Title & Location</th>
+              <th>Title &amp; Location</th>
               <th>Type</th>
               <th>Status</th>
               <th>Priority</th>
@@ -798,10 +489,10 @@
       <div class="section-header">
         <div class="section-title">🗺 Live Incident Map</div>
         <div class="map-legend-bar">
-          <span><span class="map-legend-dot" style="background:#DC2626;"></span>Critical</span>
-          <span><span class="map-legend-dot" style="background:#D97706;"></span>Active</span>
-          <span><span class="map-legend-dot" style="background:#7C3AED;"></span>Pending</span>
-          <span><span class="map-legend-dot" style="background:#16A34A;"></span>Resolved</span>
+          <span><span class="map-legend-dot" style="background:var(--red);"></span>Critical</span>
+          <span><span class="map-legend-dot" style="background:var(--amber);"></span>Active</span>
+          <span><span class="map-legend-dot" style="background:var(--purple);"></span>Pending</span>
+          <span><span class="map-legend-dot" style="background:var(--green);"></span>Resolved</span>
         </div>
       </div>
 
@@ -819,7 +510,7 @@
     <div class="tab-panel" id="tab-teams">
       <div class="section-header">
         <div class="section-title">👥 Team Status</div>
-        <button class="view-all">View All</button>
+        <button class="view-all">View All →</button>
       </div>
 
       <div class="teams-grid">
@@ -836,9 +527,9 @@
             <span class="avail-pill available">Available</span>
           </div>
           <div class="team-stats">
-            <div><div class="team-stat-label">Members</div><div class="team-stat-val" style="color:#1D4ED8">6</div></div>
-            <div><div class="team-stat-label">On Scene</div><div class="team-stat-val" style="color:#D97706">2</div></div>
-            <div><div class="team-stat-label">Resolved</div><div class="team-stat-val" style="color:#16A34A">12</div></div>
+            <div><div class="team-stat-label">Members</div><div class="team-stat-val" style="color:var(--blue)">6</div></div>
+            <div><div class="team-stat-label">On Scene</div><div class="team-stat-val" style="color:var(--amber)">2</div></div>
+            <div><div class="team-stat-label">Resolved</div><div class="team-stat-val" style="color:var(--green)">12</div></div>
           </div>
         </div>
 
@@ -854,9 +545,9 @@
             <span class="avail-pill available">Available</span>
           </div>
           <div class="team-stats">
-            <div><div class="team-stat-label">Members</div><div class="team-stat-val" style="color:#1D4ED8">5</div></div>
-            <div><div class="team-stat-label">On Scene</div><div class="team-stat-val" style="color:#D97706">1</div></div>
-            <div><div class="team-stat-label">Resolved</div><div class="team-stat-val" style="color:#16A34A">8</div></div>
+            <div><div class="team-stat-label">Members</div><div class="team-stat-val" style="color:var(--blue)">5</div></div>
+            <div><div class="team-stat-label">On Scene</div><div class="team-stat-val" style="color:var(--amber)">1</div></div>
+            <div><div class="team-stat-label">Resolved</div><div class="team-stat-val" style="color:var(--green)">8</div></div>
           </div>
         </div>
 
@@ -872,9 +563,9 @@
             <span class="avail-pill available">Available</span>
           </div>
           <div class="team-stats">
-            <div><div class="team-stat-label">Members</div><div class="team-stat-val" style="color:#1D4ED8">4</div></div>
-            <div><div class="team-stat-label">On Scene</div><div class="team-stat-val" style="color:#D97706">1</div></div>
-            <div><div class="team-stat-label">Resolved</div><div class="team-stat-val" style="color:#16A34A">15</div></div>
+            <div><div class="team-stat-label">Members</div><div class="team-stat-val" style="color:var(--blue)">4</div></div>
+            <div><div class="team-stat-label">On Scene</div><div class="team-stat-val" style="color:var(--amber)">1</div></div>
+            <div><div class="team-stat-label">Resolved</div><div class="team-stat-val" style="color:var(--green)">15</div></div>
           </div>
         </div>
 
@@ -890,9 +581,9 @@
             <span class="avail-pill on-call">On Call</span>
           </div>
           <div class="team-stats">
-            <div><div class="team-stat-label">Members</div><div class="team-stat-val" style="color:#1D4ED8">4</div></div>
-            <div><div class="team-stat-label">On Scene</div><div class="team-stat-val" style="color:#D97706">1</div></div>
-            <div><div class="team-stat-label">Resolved</div><div class="team-stat-val" style="color:#16A34A">9</div></div>
+            <div><div class="team-stat-label">Members</div><div class="team-stat-val" style="color:var(--blue)">4</div></div>
+            <div><div class="team-stat-label">On Scene</div><div class="team-stat-val" style="color:var(--amber)">1</div></div>
+            <div><div class="team-stat-label">Resolved</div><div class="team-stat-val" style="color:var(--green)">9</div></div>
           </div>
         </div>
 
@@ -908,9 +599,9 @@
             <span class="avail-pill available">Available</span>
           </div>
           <div class="team-stats">
-            <div><div class="team-stat-label">Members</div><div class="team-stat-val" style="color:#1D4ED8">3</div></div>
-            <div><div class="team-stat-label">On Scene</div><div class="team-stat-val" style="color:#D97706">0</div></div>
-            <div><div class="team-stat-label">Resolved</div><div class="team-stat-val" style="color:#16A34A">6</div></div>
+            <div><div class="team-stat-label">Members</div><div class="team-stat-val" style="color:var(--blue)">3</div></div>
+            <div><div class="team-stat-label">On Scene</div><div class="team-stat-val" style="color:var(--amber)">0</div></div>
+            <div><div class="team-stat-label">Resolved</div><div class="team-stat-val" style="color:var(--green)">6</div></div>
           </div>
         </div>
 
@@ -926,9 +617,9 @@
             <span class="avail-pill available">Available</span>
           </div>
           <div class="team-stats">
-            <div><div class="team-stat-label">Members</div><div class="team-stat-val" style="color:#1D4ED8">8</div></div>
-            <div><div class="team-stat-label">On Scene</div><div class="team-stat-val" style="color:#D97706">0</div></div>
-            <div><div class="team-stat-label">Resolved</div><div class="team-stat-val" style="color:#16A34A">21</div></div>
+            <div><div class="team-stat-label">Members</div><div class="team-stat-val" style="color:var(--blue)">8</div></div>
+            <div><div class="team-stat-label">On Scene</div><div class="team-stat-val" style="color:var(--amber)">0</div></div>
+            <div><div class="team-stat-label">Resolved</div><div class="team-stat-val" style="color:var(--green)">21</div></div>
           </div>
         </div>
 
@@ -938,15 +629,15 @@
               <div class="team-icon rescue">🚁</div>
               <div>
                 <div class="team-card-name">Rescue Team Alpha</div>
-                <div class="team-card-type">Search & Rescue</div>
+                <div class="team-card-type">Search &amp; Rescue</div>
               </div>
             </div>
             <span class="avail-pill available">Available</span>
           </div>
           <div class="team-stats">
-            <div><div class="team-stat-label">Members</div><div class="team-stat-val" style="color:#1D4ED8">6</div></div>
-            <div><div class="team-stat-label">On Scene</div><div class="team-stat-val" style="color:#D97706">0</div></div>
-            <div><div class="team-stat-label">Resolved</div><div class="team-stat-val" style="color:#16A34A">7</div></div>
+            <div><div class="team-stat-label">Members</div><div class="team-stat-val" style="color:var(--blue)">6</div></div>
+            <div><div class="team-stat-label">On Scene</div><div class="team-stat-val" style="color:var(--amber)">0</div></div>
+            <div><div class="team-stat-label">Resolved</div><div class="team-stat-val" style="color:var(--green)">7</div></div>
           </div>
         </div>
 
@@ -956,15 +647,15 @@
               <div class="team-icon rescue">🚁</div>
               <div>
                 <div class="team-card-name">Rescue Team Bravo</div>
-                <div class="team-card-type">Search & Rescue</div>
+                <div class="team-card-type">Search &amp; Rescue</div>
               </div>
             </div>
             <span class="avail-pill busy">On Scene</span>
           </div>
           <div class="team-stats">
-            <div><div class="team-stat-label">Members</div><div class="team-stat-val" style="color:#1D4ED8">6</div></div>
-            <div><div class="team-stat-label">On Scene</div><div class="team-stat-val" style="color:#D97706">2</div></div>
-            <div><div class="team-stat-label">Resolved</div><div class="team-stat-val" style="color:#16A34A">5</div></div>
+            <div><div class="team-stat-label">Members</div><div class="team-stat-val" style="color:var(--blue)">6</div></div>
+            <div><div class="team-stat-label">On Scene</div><div class="team-stat-val" style="color:var(--amber)">2</div></div>
+            <div><div class="team-stat-label">Resolved</div><div class="team-stat-val" style="color:var(--green)">5</div></div>
           </div>
         </div>
 
@@ -980,11 +671,6 @@
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     document.getElementById('tab-' + tabId).classList.add('active');
     btn.classList.add('active');
-  }
-
-  function setNav(el) {
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    el.classList.add('active');
   }
 
   function updateClock() {

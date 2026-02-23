@@ -1,9 +1,4 @@
 <?php
-/**
- * FlashCru Emergency Response System
- * Login Page - index.php
- */
-
 require_once 'includes/config.php';
 require_once 'includes/db.php';
 require_once 'includes/auth.php';
@@ -40,164 +35,181 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login — FlashCru Emergency Response</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800&display=swap" rel="stylesheet">
     <style>
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
+        :root {
+          --bg:           #EEF1F7;
+          --white:        #FAFCFF;
+          --navy:         #1A2340;
+          --indigo:       #3D5AF1;
+          --red:          #E53935;
+          --red-light:    #FDEAEA;
+          --text-primary: #1A2340;
+          --text-muted:   #8E9BBE;
+          --border:       rgba(160,180,220,0.25);
+          --neu-out:      6px 6px 14px rgba(160,180,220,0.45), -4px -4px 10px rgba(255,255,255,0.80);
+          --neu-inset:    inset 3px 3px 8px rgba(160,180,220,0.35), inset -3px -3px 8px rgba(255,255,255,0.75);
+          --neu-card:     4px 4px 12px rgba(150,170,210,0.30), -3px -3px 8px rgba(255,255,255,0.85);
+        }
+
+        html { -webkit-font-smoothing: antialiased; }
+
         body {
-            font-family: 'Inter', -apple-system, sans-serif;
+            font-family: 'DM Sans', -apple-system, sans-serif;
             font-size: 14px;
-            background: #F0F5FF;
+            background: var(--bg);
+            background-image:
+              radial-gradient(ellipse at 15% 50%, rgba(61,90,241,0.09) 0%, transparent 55%),
+              radial-gradient(ellipse at 85% 15%, rgba(229,57,53,0.08) 0%, transparent 50%),
+              radial-gradient(ellipse at 70% 85%, rgba(61,90,241,0.06) 0%, transparent 45%);
             min-height: 100vh;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
             padding: 24px;
         }
 
-        /* Left accent strip behind card */
         .login-shell {
-            display: flex;
             width: 100%;
             max-width: 420px;
+            display: flex;
             flex-direction: column;
             align-items: center;
         }
 
-        /* Brand above card */
-        .brand-header {
-            text-align: center;
-            margin-bottom: 24px;
-        }
+        /* Brand */
+        .brand-header { text-align: center; margin-bottom: 28px; }
 
         .brand-logo {
-            width: 64px; height: 64px;
-            border-radius: 16px;
+            width: 68px; height: 68px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, #E53935, #C62828);
+            margin: 0 auto 14px;
+            display: flex; align-items: center; justify-content: center;
             overflow: hidden;
-            margin: 0 auto 12px;
-            box-shadow: 0 4px 16px rgba(220,38,38,0.25);
+            box-shadow: 6px 6px 14px rgba(229,57,53,0.30), -3px -3px 8px rgba(255,255,255,0.80);
         }
 
-        .brand-logo img {
-            width: 100%; height: 100%;
-            object-fit: contain;
-            display: block;
-        }
+        .brand-logo img { width: 100%; height: 100%; object-fit: contain; display: block; }
 
         .brand-name {
-            font-size: 26px;
+            font-size: 28px;
             font-weight: 800;
-            color: #0F172A;
+            color: var(--navy);
             letter-spacing: -0.5px;
         }
 
         .brand-sub {
             font-size: 13px;
-            color: #64748B;
+            color: var(--text-muted);
             margin-top: 3px;
-            font-weight: 400;
         }
 
         /* Card */
         .login-card {
             width: 100%;
-            background: #FFFFFF;
-            border-radius: 20px;
-            padding: 32px;
-            box-shadow: 0 4px 24px rgba(15,23,42,0.10), 0 1px 3px rgba(15,23,42,0.06);
-            border: 1px solid #E2E8F0;
+            background: var(--white);
+            border-radius: 24px;
+            padding: 36px;
+            box-shadow: var(--neu-out);
+            border: 1px solid rgba(255,255,255,0.70);
+            position: relative;
+            overflow: hidden;
         }
 
-        .card-title {
-            font-size: 18px;
-            font-weight: 700;
-            color: #0F172A;
-            margin-bottom: 4px;
+        .login-card::before {
+            content: '';
+            display: block;
+            height: 3px;
+            background: linear-gradient(90deg, var(--red), var(--indigo));
+            border-radius: 24px 24px 0 0;
+            margin: -36px -36px 30px -36px;
         }
 
-        .card-sub {
-            font-size: 13px;
-            color: #64748B;
-            margin-bottom: 24px;
-        }
+        .card-title { font-size: 19px; font-weight: 700; color: var(--navy); margin-bottom: 4px; }
+        .card-sub   { font-size: 13px; color: var(--text-muted); margin-bottom: 26px; }
 
         /* Error */
         .error-alert {
-            background: #FEF2F2;
-            border: 1px solid #FECACA;
-            color: #DC2626;
-            border-radius: 8px;
-            padding: 11px 14px;
+            background: var(--red-light);
+            border-radius: 10px;
+            padding: 12px 14px;
             font-size: 13px;
-            margin-bottom: 20px;
+            margin-bottom: 22px;
             display: flex;
             align-items: center;
             gap: 8px;
+            color: var(--red);
+            box-shadow: inset 0 0 0 1px rgba(229,57,53,0.20);
         }
 
         /* Form */
-        .form-group { margin-bottom: 16px; }
+        .form-group { margin-bottom: 18px; }
 
         .form-label {
             display: block;
-            font-size: 13px;
+            font-size: 12.5px;
             font-weight: 600;
-            color: #0F172A;
-            margin-bottom: 6px;
+            color: #5A6787;
+            margin-bottom: 7px;
         }
 
         .form-input {
             display: block;
             width: 100%;
-            padding: 10px 13px;
-            font-family: 'Inter', sans-serif;
+            padding: 11px 14px;
+            font-family: 'DM Sans', sans-serif;
             font-size: 13px;
-            color: #0F172A;
-            background: #FFFFFF;
-            border: 1.5px solid #E2E8F0;
-            border-radius: 8px;
-            transition: border-color 0.15s, box-shadow 0.15s;
+            color: var(--navy);
+            background: var(--bg);
+            border: 1.5px solid transparent;
+            border-radius: 10px;
+            box-shadow: var(--neu-inset);
+            transition: all 0.22s;
             outline: none;
         }
 
         .form-input:focus {
-            border-color: #3B82F6;
-            box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
+            border-color: rgba(61,90,241,0.40);
+            box-shadow: var(--neu-inset), 0 0 0 3px rgba(61,90,241,0.10);
+            background: var(--white);
         }
 
-        .form-input::placeholder { color: #94A3B8; }
+        .form-input::placeholder { color: var(--text-muted); }
 
         /* Remember / Forgot */
         .form-extras {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin: 14px 0 22px;
+            margin: 16px 0 24px;
         }
 
         .checkbox-label {
             display: flex;
             align-items: center;
-            gap: 7px;
+            gap: 8px;
             font-size: 13px;
-            color: #475569;
+            color: #5A6787;
             cursor: pointer;
         }
 
         .checkbox-label input[type="checkbox"] {
-            width: 15px; height: 15px;
-            accent-color: #1D4ED8;
+            width: 16px; height: 16px;
+            accent-color: var(--indigo);
             cursor: pointer;
         }
 
         .forgot-link {
             font-size: 13px;
-            color: #1D4ED8;
+            color: var(--indigo);
             font-weight: 600;
             text-decoration: none;
+            transition: opacity 0.15s;
         }
-        .forgot-link:hover { text-decoration: underline; }
+        .forgot-link:hover { opacity: 0.75; text-decoration: underline; }
 
         /* Login button */
         .btn-login {
@@ -206,22 +218,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             justify-content: center;
             gap: 8px;
             width: 100%;
-            padding: 12px;
-            background: #0F172A;
+            padding: 13px;
+            background: linear-gradient(135deg, var(--indigo), #5B73F5);
             color: white;
             border: none;
-            border-radius: 8px;
-            font-family: 'Inter', sans-serif;
+            border-radius: 10px;
+            font-family: 'DM Sans', sans-serif;
             font-size: 14px;
             font-weight: 700;
             cursor: pointer;
-            transition: background 0.15s, box-shadow 0.15s, transform 0.1s;
+            transition: all 0.22s;
             letter-spacing: 0.01em;
+            box-shadow: 0 4px 16px rgba(61,90,241,0.30);
         }
 
         .btn-login:hover {
-            background: #1E40AF;
-            box-shadow: 0 4px 14px rgba(29,78,216,0.3);
+            box-shadow: 0 6px 22px rgba(61,90,241,0.45);
             transform: translateY(-1px);
         }
 
@@ -231,79 +243,72 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .divider {
             text-align: center;
             font-size: 11px;
-            color: #94A3B8;
-            margin: 20px 0 16px;
+            font-weight: 700;
+            color: var(--text-muted);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin: 22px 0 18px;
             position: relative;
         }
         .divider::before, .divider::after {
             content: '';
             position: absolute;
             top: 50%;
-            width: 42%;
+            width: 38%;
             height: 1px;
-            background: #E2E8F0;
+            background: var(--border);
         }
         .divider::before { left: 0; }
         .divider::after  { right: 0; }
 
         /* Demo box */
         .demo-box {
-            background: #EFF6FF;
-            border: 1px solid #BFDBFE;
-            border-radius: 10px;
-            padding: 14px 16px;
+            background: var(--bg);
+            border-radius: 12px;
+            padding: 16px 18px;
+            box-shadow: var(--neu-inset);
         }
 
         .demo-title {
             font-size: 10px;
             font-weight: 700;
-            color: #1D4ED8;
+            color: var(--indigo);
             text-transform: uppercase;
-            letter-spacing: 0.08em;
-            margin-bottom: 10px;
+            letter-spacing: 0.10em;
+            margin-bottom: 12px;
         }
 
         .demo-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 7px;
+            margin-bottom: 8px;
         }
-
         .demo-row:last-child { margin-bottom: 0; }
 
-        .demo-label { font-size: 12px; color: #475569; }
+        .demo-label { font-size: 12.5px; color: #5A6787; font-weight: 500; }
 
         .demo-val {
             font-size: 12px;
-            font-family: monospace;
-            background: rgba(29,78,216,0.1);
-            color: #1D4ED8;
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-weight: 600;
+            font-family: 'DM Mono', monospace;
+            background: rgba(61,90,241,0.10);
+            color: var(--indigo);
+            padding: 3px 10px;
+            border-radius: 6px;
+            font-weight: 500;
+            letter-spacing: 0.02em;
         }
 
         /* Footer */
         .login-footer {
-            margin-top: 20px;
+            margin-top: 22px;
             font-size: 12px;
-            color: #94A3B8;
+            color: var(--text-muted);
             text-align: center;
         }
 
-        /* Red top accent on card */
-        .login-card::before {
-            content: '';
-            display: block;
-            height: 3px;
-            background: linear-gradient(90deg, #DC2626, #1D4ED8);
-            border-radius: 20px 20px 0 0;
-            margin: -32px -32px 24px -32px;
-        }
-
         @media (max-width: 480px) {
-            .login-card { padding: 24px 20px; }
+            .login-card { padding: 28px 22px; }
         }
     </style>
 </head>
@@ -376,7 +381,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         </form>
 
-        <div class="divider">DEMO CREDENTIALS</div>
+        <div class="divider">Demo Credentials</div>
 
         <div class="demo-box">
             <div class="demo-title">Test Accounts</div>
@@ -392,7 +397,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     </div>
 
-    <div class="login-footer">⚡ FlashCru Emergency Response System v1.0</div>
+    <div class="login-footer">⚡ FlashCru Emergency Response System v2.0</div>
 
 </div>
 

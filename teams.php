@@ -1,7 +1,7 @@
 <?php
 /**
  * FlashCru Emergency Response System
- * Teams Management Page
+ * Teams Management Page — Redesigned UI v2
  */
 
 require_once 'includes/config.php';
@@ -62,10 +62,8 @@ $teams = $db->fetchAll("
     ORDER BY t.status, t.team_name
 ");
 
-// Available responders for team member assignment
 $responders = $db->fetchAll("SELECT user_id, full_name, role FROM users WHERE status = 'active' ORDER BY full_name");
 
-// Edit team
 $edit_team = null;
 if (isset($_GET['edit'])) {
     $edit_team = $db->fetchOne("SELECT * FROM teams WHERE team_id = ?", [(int)$_GET['edit']]);
@@ -77,7 +75,7 @@ if (isset($_GET['edit'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $page_title; ?> - FlashCru</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/css/main.css">
 </head>
 <body>
@@ -91,7 +89,7 @@ if (isset($_GET['edit'])) {
             <div class="flex-between mb-20">
                 <div>
                     <h2 style="font-size:22px;font-weight:800;">👥 Teams</h2>
-                    <p class="text-muted" style="font-size:13px;">Manage emergency response teams</p>
+                    <p class="text-muted" style="font-size:13px;margin-top:3px;">Manage emergency response teams</p>
                 </div>
                 <?php if (isAdmin() || isDispatcher()): ?>
                 <button class="btn btn-primary" onclick="openModal('teamModal')">+ New Team</button>
@@ -103,8 +101,8 @@ if (isset($_GET['edit'])) {
             <?php endif; ?>
 
             <!-- Team Stats -->
-            <div class="stats-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:24px;">
-                <div class="stat-card">
+            <div class="stats-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:28px;">
+                <div class="stat-card" style="display:flex;align-items:center;gap:16px;">
                     <div class="stat-icon green">✅</div>
                     <div class="stat-info">
                         <h3>Available</h3>
@@ -113,7 +111,7 @@ if (isset($_GET['edit'])) {
                         </div>
                     </div>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card" style="display:flex;align-items:center;gap:16px;">
                     <div class="stat-icon red">🚨</div>
                     <div class="stat-info">
                         <h3>Busy</h3>
@@ -122,7 +120,7 @@ if (isset($_GET['edit'])) {
                         </div>
                     </div>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card" style="display:flex;align-items:center;gap:16px;">
                     <div class="stat-icon cyan">👥</div>
                     <div class="stat-info">
                         <h3>Total Teams</h3>
@@ -173,7 +171,7 @@ if (isset($_GET['edit'])) {
                         <!-- Quick Status Change -->
                         <form method="POST" style="display:inline;">
                             <input type="hidden" name="team_id" value="<?php echo $team['team_id']; ?>">
-                            <select name="status" class="form-control" style="width:auto;padding:6px 10px;font-size:12px;"
+                            <select name="status" class="form-control" style="width:auto;padding:6px 30px 6px 10px;font-size:12px;"
                                     onchange="this.form.submit()">
                                 <option value="available" <?php echo $team['status']==='available'?'selected':''; ?>>Available</option>
                                 <option value="busy"      <?php echo $team['status']==='busy'?'selected':''; ?>>Busy</option>
@@ -269,97 +267,5 @@ function closeModal(id) {
     <?php if ($edit_team): ?>window.location.href = 'teams.php';<?php endif; ?>
 }
 </script>
-
-<style>
-.teams-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
-}
-
-.team-card {
-    background: #111827;
-    border: 1px solid #1E293B;
-    border-radius: 16px;
-    overflow: hidden;
-    transition: all 0.2s;
-}
-
-.team-card:hover {
-    border-color: #334155;
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
-}
-
-.team-card-header {
-    padding: 20px;
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    border-bottom: 1px solid #1E293B;
-}
-
-.team-card-icon {
-    font-size: 28px;
-    width: 52px;
-    height: 52px;
-    background: #0F172A;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-
-.team-card-info {
-    flex: 1;
-}
-
-.team-card-info h3 {
-    font-size: 15px;
-    font-weight: 700;
-    color: #E5E7EB;
-    margin-bottom: 2px;
-}
-
-.team-card-info p {
-    font-size: 12px;
-    color: #6B7280;
-}
-
-.team-card-body {
-    padding: 16px 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.team-detail {
-    display: flex;
-    justify-content: space-between;
-    font-size: 13px;
-}
-
-.team-detail span:first-child {
-    color: #6B7280;
-}
-
-.team-detail span:last-child {
-    color: #E5E7EB;
-    font-weight: 500;
-}
-
-.team-card-footer {
-    padding: 14px 20px;
-    border-top: 1px solid #1E293B;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 10px;
-}
-
-@media (max-width: 1100px) { .teams-grid { grid-template-columns: repeat(2,1fr); } }
-@media (max-width: 700px)  { .teams-grid { grid-template-columns: 1fr; } }
-</style>
 </body>
 </html>
