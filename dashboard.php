@@ -14,14 +14,17 @@ $page_title = 'Dashboard';
 $db = new Database();
 
 // ── KPI Counts ─────────────────────────────────────────────────
+// Support both old status system and new report_status table
 $counts = $db->fetchOne("
     SELECT
-        SUM(status = 'critical') AS critical,
-        SUM(status = 'active')   AS active,
-        SUM(status = 'pending')  AS pending,
-        SUM(status = 'resolved') AS resolved,
-        COUNT(*)                 AS total
-    FROM incidents
+        SUM(CASE WHEN rs.name = 'Pending'    THEN 1 ELSE 0 END) AS pending,
+        SUM(CASE WHEN rs.name = 'Dispatched' THEN 1 ELSE 0 END) AS dispatched,
+        SUM(CASE WHEN rs.name = 'Ongoing'    THEN 1 ELSE 0 END) AS ongoing,
+        SUM(CASE WHEN rs.name = 'Resolved'   THEN 1 ELSE 0 END) AS resolved,
+        SUM(CASE WHEN rs.name = 'Cancelled'  THEN 1 ELSE 0 END) AS cancelled,
+        COUNT(*) AS total
+    FROM incidents i
+    LEFT JOIN report_status rs ON i.status_id = rs.id
 ");
 
 $today_count = $db->count('incidents', 'DATE(created_at) = CURDATE()');
@@ -30,12 +33,24 @@ $today_count = $db->count('incidents', 'DATE(created_at) = CURDATE()');
 $teams_total     = $db->count('teams');
 $teams_available = $db->count('teams', "status = 'available'");
 
-// Recent incidents
+// Recent incidents — now with barangay + incident_type from new tables
 $recent_incidents = $db->fetchAll("
-    SELECT i.*, t.team_name
+    SELECT i.*,
+           t.team_name,
+           u.full_name        AS reporter,
+           it.name            AS type_name,
+           it.icon            AS type_icon,
+           it.color           AS type_color,
+           b.name             AS barangay_name,
+           rs.name            AS status_name,
+           rs.color           AS status_color
     FROM incidents i
-    LEFT JOIN teams t ON i.assigned_team = t.team_id
-    ORDER BY FIELD(i.status,'critical','active','pending','resolved'), i.created_at DESC
+    LEFT JOIN teams t           ON i.assigned_team_id = t.team_id
+    LEFT JOIN users u           ON i.user_id = u.user_id
+    LEFT JOIN incident_types it ON i.incident_type_id = it.id
+    LEFT JOIN barangays b       ON i.barangay_id = b.id
+    LEFT JOIN report_status rs  ON i.status_id = rs.id
+    ORDER BY i.created_at DESC
     LIMIT 10
 ");
 
@@ -43,17 +58,18 @@ $recent_incidents = $db->fetchAll("
 $all_teams = $db->fetchAll("
     SELECT t.*,
         COUNT(DISTINCT tm.team_mem_id) AS member_count,
-        SUM(CASE WHEN i.status IN ('active','critical') THEN 1 ELSE 0 END) AS on_scene,
-        SUM(CASE WHEN i.status = 'resolved' THEN 1 ELSE 0 END) AS resolved_count
+        SUM(CASE WHEN rs.name IN ('Dispatched','Ongoing') THEN 1 ELSE 0 END) AS on_scene,
+        SUM(CASE WHEN rs.name = 'Resolved' THEN 1 ELSE 0 END) AS resolved_count
     FROM teams t
     LEFT JOIN team_members tm ON t.team_id = tm.team_id
-    LEFT JOIN incidents i ON t.team_id = i.assigned_team
+    LEFT JOIN incidents i     ON t.team_id = i.assigned_team_id
+    LEFT JOIN report_status rs ON i.status_id = rs.id
     GROUP BY t.team_id
     ORDER BY t.status, t.team_name
 ");
 
 // Greeting
-$hour = (int)date('H');
+$hour     = (int)date('H');
 $greeting = $hour < 12 ? 'Good Morning' : ($hour < 17 ? 'Good Afternoon' : 'Good Evening');
 $day_str  = date('l, F j, Y');
 ?>
@@ -96,30 +112,30 @@ $day_str  = date('l, F j, Y');
                     </p>
                 </div>
 
-                <!-- 8-card KPI grid -->
+                <!-- KPI grid -->
                 <div class="cards-grid cards-grid-4">
 
                     <div class="stat-card critical" style="display:flex;align-items:center;gap:16px;">
-                        <div class="stat-icon red">🚨</div>
+                        <div class="stat-icon red">⏳</div>
                         <div class="stat-info">
-                            <h3 class="card-label">Critical</h3>
-                            <div class="stat-value red"><?php echo (int)($counts['critical'] ?? 0); ?></div>
+                            <h3 class="card-label">Pending</h3>
+                            <div class="stat-value red"><?php echo (int)($counts['pending'] ?? 0); ?></div>
                         </div>
                     </div>
 
                     <div class="stat-card active-c" style="display:flex;align-items:center;gap:16px;">
-                        <div class="stat-icon amber">⚡</div>
+                        <div class="stat-icon amber">🚒</div>
                         <div class="stat-info">
-                            <h3 class="card-label">Active</h3>
-                            <div class="stat-value amber"><?php echo (int)($counts['active'] ?? 0); ?></div>
+                            <h3 class="card-label">Dispatched</h3>
+                            <div class="stat-value amber"><?php echo (int)($counts['dispatched'] ?? 0); ?></div>
                         </div>
                     </div>
 
                     <div class="stat-card pending" style="display:flex;align-items:center;gap:16px;">
-                        <div class="stat-icon purple">⏳</div>
+                        <div class="stat-icon purple">⚡</div>
                         <div class="stat-info">
-                            <h3 class="card-label">Pending</h3>
-                            <div class="stat-value purple"><?php echo (int)($counts['pending'] ?? 0); ?></div>
+                            <h3 class="card-label">Ongoing</h3>
+                            <div class="stat-value purple"><?php echo (int)($counts['ongoing'] ?? 0); ?></div>
                         </div>
                     </div>
 
@@ -142,7 +158,7 @@ $day_str  = date('l, F j, Y');
                     <div class="stat-card total" style="display:flex;align-items:center;gap:16px;">
                         <div class="stat-icon slate">📋</div>
                         <div class="stat-info">
-                            <h3 class="card-label">Total Incidents</h3>
+                            <h3 class="card-label">Total Reports</h3>
                             <div class="stat-value" style="color:var(--navy);font-size:32px;font-weight:800;font-family:'JetBrains Mono',monospace;"><?php echo (int)($counts['total'] ?? 0); ?></div>
                         </div>
                     </div>
@@ -174,6 +190,7 @@ $day_str  = date('l, F j, Y');
                         <button class="qbtn qbtn-red"    onclick="switchTab('incidents',document.querySelectorAll('.tab-btn')[1])">🔴 Recent Incidents</button>
                         <button class="qbtn qbtn-blue"   onclick="switchTab('map',document.querySelectorAll('.tab-btn')[2])">🗺️ Live Map</button>
                         <button class="qbtn qbtn-purple" onclick="switchTab('teams',document.querySelectorAll('.tab-btn')[3])">👥 Team Status</button>
+                        <a href="report_incident.php" class="qbtn qbtn-red" style="text-decoration:none;">🚨 New Report</a>
                     </div>
                 </div>
 
@@ -184,7 +201,7 @@ $day_str  = date('l, F j, Y');
             <div class="tab-panel" id="tab-incidents">
 
                 <div class="section-header">
-                    <div class="section-title">🔴 Recent Incidents</div>
+                    <div class="section-title">🔴 Recent Incident Reports</div>
                     <a href="incidents.php" class="view-all">View All →</a>
                 </div>
 
@@ -193,45 +210,61 @@ $day_str  = date('l, F j, Y');
                         <thead>
                             <tr>
                                 <th>ID</th>
-                                <th>Title &amp; Location</th>
                                 <th>Type</th>
+                                <th>Reporter</th>
+                                <th>Barangay</th>
+                                <th>Description</th>
                                 <th>Status</th>
-                                <th>Priority</th>
                                 <th>Assigned Team</th>
+                                <th>Date</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php if (empty($recent_incidents)): ?>
-                            <tr><td colspan="6">
+                            <tr><td colspan="8">
                                 <div class="empty-state">No incidents found</div>
                             </td></tr>
                             <?php else: ?>
-                            <?php
-                            $type_icons = ['fire'=>'🔥','medical'=>'🚑','rescue'=>'🚒','accident'=>'🚗','other'=>'⚠️'];
-                            $type_classes = ['fire'=>'fire','medical'=>'medical','rescue'=>'rescue','accident'=>'accident','other'=>'other'];
-                            foreach ($recent_incidents as $inc):
-                                $icon  = $type_icons[$inc['incident_type']] ?? '⚠️';
-                                $tclass = $type_classes[$inc['incident_type']] ?? 'other';
-                                $status = strtoupper($inc['status']);
-                                $priority = strtoupper($inc['priority']);
+                            <?php foreach ($recent_incidents as $inc):
+                                $sc = $inc['status_color'] ?? '#6B7280';
+                                $sn = $inc['status_name']  ?? 'Unknown';
                             ?>
-                            <tr onclick="window.location='incidents.php?edit=<?php echo $inc['incident_id']; ?>'">
-                                <td><span class="incident-id">#<?php echo $inc['incident_id']; ?></span></td>
+                            <tr>
+                                <td><span class="incident-id">#<?php echo $inc['id'] ?? $inc['incident_id']; ?></span></td>
                                 <td>
-                                    <div class="incident-title"><?php echo htmlspecialchars($inc['title']); ?></div>
-                                    <div class="incident-addr">📍 <?php echo htmlspecialchars($inc['location']); ?></div>
+                                    <?php if (!empty($inc['type_icon'])): ?>
+                                        <span class="type-badge" style="background:<?php echo $inc['type_color'] ?? '#fee2e2'; ?>22;color:<?php echo $inc['type_color'] ?? '#A63244'; ?>;border:1px solid <?php echo $inc['type_color'] ?? '#A63244'; ?>44;">
+                                            <i class="<?php echo htmlspecialchars($inc['type_icon']); ?>"></i>
+                                            <?php echo htmlspecialchars($inc['type_name'] ?? '—'); ?>
+                                        </span>
+                                    <?php else: ?>
+                                        <span class="type-badge other">⚠️ <?php echo htmlspecialchars($inc['type_name'] ?? '—'); ?></span>
+                                    <?php endif; ?>
+                                </td>
+                                <td style="font-size:12px;"><?php echo htmlspecialchars($inc['reporter'] ?? '—'); ?></td>
+                                <td>
+                                    <div style="font-size:12.5px;font-weight:600;"><?php echo htmlspecialchars($inc['barangay_name'] ?? '—'); ?></div>
+                                    <?php if (!empty($inc['street_landmark'])): ?>
+                                        <div class="incident-addr">📍 <?php echo htmlspecialchars($inc['street_landmark']); ?></div>
+                                    <?php endif; ?>
+                                </td>
+                                <td style="max-width:160px;font-size:12px;color:var(--gray-500);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                                    <?php echo htmlspecialchars($inc['description'] ?? '—'); ?>
                                 </td>
                                 <td>
-                                    <span class="type-badge <?php echo $tclass; ?>"><?php echo $icon; ?> <?php echo ucfirst($inc['incident_type']); ?></span>
+                                    <span style="background:<?php echo $sc; ?>22;color:<?php echo $sc; ?>;border:1px solid <?php echo $sc; ?>44;font-size:10px;font-weight:700;padding:3px 10px;border-radius:99px;text-transform:uppercase;letter-spacing:0.04em;">
+                                        <?php echo $sn; ?>
+                                    </span>
                                 </td>
-                                <td><span class="badge badge-<?php echo $inc['status']; ?>"><?php echo $status; ?></span></td>
-                                <td><span class="priority-badge <?php echo $priority; ?>"><?php echo $priority; ?></span></td>
                                 <td>
-                                    <?php if ($inc['team_name']): ?>
+                                    <?php if (!empty($inc['team_name'])): ?>
                                         <span class="team-text"><?php echo htmlspecialchars($inc['team_name']); ?></span>
                                     <?php else: ?>
                                         <span class="team-unassigned">Unassigned</span>
                                     <?php endif; ?>
+                                </td>
+                                <td class="text-muted" style="font-size:11px;white-space:nowrap;">
+                                    <?php echo date('M j, Y', strtotime($inc['created_at'])); ?>
                                 </td>
                             </tr>
                             <?php endforeach; ?>
@@ -247,12 +280,12 @@ $day_str  = date('l, F j, Y');
             <div class="tab-panel" id="tab-map">
 
                 <div class="section-header">
-                    <div class="section-title">🗺️ Live Incident Map</div>
+                    <div class="section-title">🗺️ Live Incident Map — Davao City</div>
                     <div class="map-legend-bar">
-                        <span><span class="map-legend-dot" style="background:var(--red-600);"></span>Critical</span>
-                        <span><span class="map-legend-dot" style="background:var(--amber);"></span>Active</span>
-                        <span><span class="map-legend-dot" style="background:var(--purple);"></span>Pending</span>
-                        <span><span class="map-legend-dot" style="background:var(--green);"></span>Resolved</span>
+                        <span><span class="map-legend-dot" style="background:#FD5E53;"></span>Pending</span>
+                        <span><span class="map-legend-dot" style="background:#e67e22;"></span>Dispatched</span>
+                        <span><span class="map-legend-dot" style="background:#3498db;"></span>Ongoing</span>
+                        <span><span class="map-legend-dot" style="background:#21BF73;"></span>Resolved</span>
                     </div>
                 </div>
 
@@ -283,10 +316,9 @@ $day_str  = date('l, F j, Y');
                     $type_icons   = ['fire'=>'🔥','medical'=>'🚑','rescue'=>'🚒','police'=>'🚔'];
                     $type_classes = ['fire'=>'fire','medical'=>'medical','rescue'=>'rescue','police'=>'police'];
                     foreach ($all_teams as $team):
-                        $icon  = $type_icons[$team['team_type']] ?? '👥';
+                        $icon   = $type_icons[$team['team_type']] ?? '👥';
                         $tclass = $type_classes[$team['team_type']] ?? 'police';
-                        $status_map = ['available'=>'available','busy'=>'busy','offline'=>'offline','on-call'=>'on-call'];
-                        $avail_class = $status_map[$team['status']] ?? 'offline';
+                        $avail_class = in_array($team['status'], ['available','busy','offline','on-call']) ? $team['status'] : 'offline';
                     ?>
                     <div class="team-card">
                         <div class="team-card-header">

@@ -2,6 +2,7 @@
 /**
  * FlashCru Emergency Response System
  * Teams Management — Red/White/Blue Theme v3.0
+ * Updated: Uses assigned_team_id (new column name)
  */
 
 require_once 'includes/config.php';
@@ -50,14 +51,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_team'])) {
     exit();
 }
 
-// Fetch teams with stats
+// Fetch teams with stats — updated to use assigned_team_id
 $teams = $db->fetchAll("
     SELECT t.*,
-           COUNT(tm.team_mem_id)  AS member_count,
-           COUNT(i.incident_id)   AS active_incidents
+           COUNT(DISTINCT tm.team_mem_id) AS member_count,
+           SUM(CASE WHEN rs.name IN ('Dispatched','Ongoing') THEN 1 ELSE 0 END) AS active_incidents
     FROM teams t
-    LEFT JOIN team_members tm ON t.team_id = tm.team_id
-    LEFT JOIN incidents i ON t.team_id = i.assigned_team AND i.status IN ('active','critical')
+    LEFT JOIN team_members tm  ON t.team_id = tm.team_id
+    LEFT JOIN incidents i      ON t.team_id = i.assigned_team_id
+    LEFT JOIN report_status rs ON i.status_id = rs.id
     GROUP BY t.team_id
     ORDER BY t.status, t.team_name
 ");
@@ -128,14 +130,14 @@ $count_busy      = count(array_filter($teams, fn($t) => $t['status'] === 'busy')
 
             <!-- Teams Grid -->
             <?php if (empty($teams)): ?>
-            <div class="empty-state">No teams found. <a href="teams.php" onclick="openModal('teamModal');return false;" style="color:var(--red-600);">Create the first team →</a></div>
+            <div class="empty-state">No teams found. <a href="#" onclick="openModal('teamModal');return false;" style="color:var(--red-600);">Create the first team →</a></div>
             <?php else: ?>
             <div class="teams-grid">
                 <?php
                 $type_icons   = ['fire'=>'🔥','medical'=>'🚑','police'=>'🚔','rescue'=>'🚒'];
                 $type_classes = ['fire'=>'fire','medical'=>'medical','police'=>'police','rescue'=>'rescue'];
                 foreach ($teams as $team):
-                    $icon  = $type_icons[$team['team_type']] ?? '👥';
+                    $icon   = $type_icons[$team['team_type']] ?? '👥';
                     $tclass = $type_classes[$team['team_type']] ?? 'police';
                 ?>
                 <div class="team-card">

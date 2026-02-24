@@ -1,2 +1,404 @@
-[17-Feb-2026 20:21:54 Asia/Manila] FlashCru Database Connection Error: SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
-[17-Feb-2026 20:22:05 Asia/Manila] FlashCru Database Connection Error: SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+[24-Feb-2026 20:33:20 Asia/Manila] FlashCru Query Error: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'emergency_db.report_status' doesn't exist | SQL: 
+    SELECT
+        SUM(CASE WHEN rs.name = 'Pending'    THEN 1 ELSE 0 END) AS pending,
+        SUM(CASE WHEN rs.name = 'Dispatched' THEN 1 ELSE 0 END) AS dispatched,
+        SUM(CASE WHEN rs.name = 'Ongoing'    THEN 1 ELSE 0 END) AS ongoing,
+        SUM(CASE WHEN rs.name = 'Resolved'   THEN 1 ELSE 0 END) AS resolved,
+        SUM(CASE WHEN rs.name = 'Cancelled'  THEN 1 ELSE 0 END) AS cancelled,
+        COUNT(*) AS total
+    FROM incidents i
+    LEFT JOIN report_status rs ON i.status_id = rs.id
+
+[24-Feb-2026 20:33:20 Asia/Manila] FlashCru Query Error: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'emergency_db.incident_types' doesn't exist | SQL: 
+    SELECT i.*,
+           t.team_name,
+           u.full_name        AS reporter,
+           it.name            AS type_name,
+           it.icon            AS type_icon,
+           it.color           AS type_color,
+           b.name             AS barangay_name,
+           rs.name            AS status_name,
+           rs.color           AS status_color
+    FROM incidents i
+    LEFT JOIN teams t           ON i.assigned_team_id = t.team_id
+    LEFT JOIN users u           ON i.user_id = u.user_id
+    LEFT JOIN incident_types it ON i.incident_type_id = it.id
+    LEFT JOIN barangays b       ON i.barangay_id = b.id
+    LEFT JOIN report_status rs  ON i.status_id = rs.id
+    ORDER BY i.created_at DESC
+    LIMIT 10
+
+[24-Feb-2026 20:33:20 Asia/Manila] FlashCru Query Error: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'emergency_db.report_status' doesn't exist | SQL: 
+    SELECT t.*,
+        COUNT(DISTINCT tm.team_mem_id) AS member_count,
+        SUM(CASE WHEN rs.name IN ('Dispatched','Ongoing') THEN 1 ELSE 0 END) AS on_scene,
+        SUM(CASE WHEN rs.name = 'Resolved' THEN 1 ELSE 0 END) AS resolved_count
+    FROM teams t
+    LEFT JOIN team_members tm ON t.team_id = tm.team_id
+    LEFT JOIN incidents i     ON t.team_id = i.assigned_team_id
+    LEFT JOIN report_status rs ON i.status_id = rs.id
+    GROUP BY t.team_id
+    ORDER BY t.status, t.team_name
+
+[24-Feb-2026 20:33:30 Asia/Manila] FlashCru Query Error: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'emergency_db.report_status' doesn't exist | SQL: 
+    SELECT
+        SUM(CASE WHEN rs.name = 'Pending'    THEN 1 ELSE 0 END) AS pending,
+        SUM(CASE WHEN rs.name = 'Dispatched' THEN 1 ELSE 0 END) AS dispatched,
+        SUM(CASE WHEN rs.name = 'Ongoing'    THEN 1 ELSE 0 END) AS ongoing,
+        SUM(CASE WHEN rs.name = 'Resolved'   THEN 1 ELSE 0 END) AS resolved,
+        SUM(CASE WHEN rs.name = 'Cancelled'  THEN 1 ELSE 0 END) AS cancelled,
+        COUNT(*) AS total
+    FROM incidents i
+    LEFT JOIN report_status rs ON i.status_id = rs.id
+
+[24-Feb-2026 20:33:30 Asia/Manila] FlashCru Query Error: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'emergency_db.incident_types' doesn't exist | SQL: 
+    SELECT i.*,
+           t.team_name,
+           u.full_name        AS reporter,
+           it.name            AS type_name,
+           it.icon            AS type_icon,
+           it.color           AS type_color,
+           b.name             AS barangay_name,
+           rs.name            AS status_name,
+           rs.color           AS status_color
+    FROM incidents i
+    LEFT JOIN teams t           ON i.assigned_team_id = t.team_id
+    LEFT JOIN users u           ON i.user_id = u.user_id
+    LEFT JOIN incident_types it ON i.incident_type_id = it.id
+    LEFT JOIN barangays b       ON i.barangay_id = b.id
+    LEFT JOIN report_status rs  ON i.status_id = rs.id
+    ORDER BY i.created_at DESC
+    LIMIT 10
+
+[24-Feb-2026 20:33:30 Asia/Manila] FlashCru Query Error: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'emergency_db.report_status' doesn't exist | SQL: 
+    SELECT t.*,
+        COUNT(DISTINCT tm.team_mem_id) AS member_count,
+        SUM(CASE WHEN rs.name IN ('Dispatched','Ongoing') THEN 1 ELSE 0 END) AS on_scene,
+        SUM(CASE WHEN rs.name = 'Resolved' THEN 1 ELSE 0 END) AS resolved_count
+    FROM teams t
+    LEFT JOIN team_members tm ON t.team_id = tm.team_id
+    LEFT JOIN incidents i     ON t.team_id = i.assigned_team_id
+    LEFT JOIN report_status rs ON i.status_id = rs.id
+    GROUP BY t.team_id
+    ORDER BY t.status, t.team_name
+
+[24-Feb-2026 20:34:36 Asia/Manila] FlashCru Query Error: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'emergency_db.report_status' doesn't exist | SQL: 
+    SELECT
+        SUM(CASE WHEN rs.name = 'Pending'    THEN 1 ELSE 0 END) AS pending,
+        SUM(CASE WHEN rs.name = 'Dispatched' THEN 1 ELSE 0 END) AS dispatched,
+        SUM(CASE WHEN rs.name = 'Ongoing'    THEN 1 ELSE 0 END) AS ongoing,
+        SUM(CASE WHEN rs.name = 'Resolved'   THEN 1 ELSE 0 END) AS resolved,
+        SUM(CASE WHEN rs.name = 'Cancelled'  THEN 1 ELSE 0 END) AS cancelled,
+        COUNT(*) AS total
+    FROM incidents i
+    LEFT JOIN report_status rs ON i.status_id = rs.id
+
+[24-Feb-2026 20:34:36 Asia/Manila] FlashCru Query Error: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'emergency_db.incident_types' doesn't exist | SQL: 
+    SELECT i.*,
+           t.team_name,
+           u.full_name        AS reporter,
+           it.name            AS type_name,
+           it.icon            AS type_icon,
+           it.color           AS type_color,
+           b.name             AS barangay_name,
+           rs.name            AS status_name,
+           rs.color           AS status_color
+    FROM incidents i
+    LEFT JOIN teams t           ON i.assigned_team_id = t.team_id
+    LEFT JOIN users u           ON i.user_id = u.user_id
+    LEFT JOIN incident_types it ON i.incident_type_id = it.id
+    LEFT JOIN barangays b       ON i.barangay_id = b.id
+    LEFT JOIN report_status rs  ON i.status_id = rs.id
+    ORDER BY i.created_at DESC
+    LIMIT 10
+
+[24-Feb-2026 20:34:36 Asia/Manila] FlashCru Query Error: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'emergency_db.report_status' doesn't exist | SQL: 
+    SELECT t.*,
+        COUNT(DISTINCT tm.team_mem_id) AS member_count,
+        SUM(CASE WHEN rs.name IN ('Dispatched','Ongoing') THEN 1 ELSE 0 END) AS on_scene,
+        SUM(CASE WHEN rs.name = 'Resolved' THEN 1 ELSE 0 END) AS resolved_count
+    FROM teams t
+    LEFT JOIN team_members tm ON t.team_id = tm.team_id
+    LEFT JOIN incidents i     ON t.team_id = i.assigned_team_id
+    LEFT JOIN report_status rs ON i.status_id = rs.id
+    GROUP BY t.team_id
+    ORDER BY t.status, t.team_name
+
+[24-Feb-2026 20:46:27 Asia/Manila] FlashCru Query Error: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'emergency_db.report_status' doesn't exist | SQL: 
+    SELECT
+        SUM(CASE WHEN rs.name = 'Pending'    THEN 1 ELSE 0 END) AS pending,
+        SUM(CASE WHEN rs.name = 'Dispatched' THEN 1 ELSE 0 END) AS dispatched,
+        SUM(CASE WHEN rs.name = 'Ongoing'    THEN 1 ELSE 0 END) AS ongoing,
+        SUM(CASE WHEN rs.name = 'Resolved'   THEN 1 ELSE 0 END) AS resolved,
+        SUM(CASE WHEN rs.name = 'Cancelled'  THEN 1 ELSE 0 END) AS cancelled,
+        COUNT(*) AS total
+    FROM incidents i
+    LEFT JOIN report_status rs ON i.status_id = rs.id
+
+[24-Feb-2026 20:46:27 Asia/Manila] FlashCru Query Error: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'emergency_db.incident_types' doesn't exist | SQL: 
+    SELECT i.*,
+           t.team_name,
+           u.full_name        AS reporter,
+           it.name            AS type_name,
+           it.icon            AS type_icon,
+           it.color           AS type_color,
+           b.name             AS barangay_name,
+           rs.name            AS status_name,
+           rs.color           AS status_color
+    FROM incidents i
+    LEFT JOIN teams t           ON i.assigned_team_id = t.team_id
+    LEFT JOIN users u           ON i.user_id = u.user_id
+    LEFT JOIN incident_types it ON i.incident_type_id = it.id
+    LEFT JOIN barangays b       ON i.barangay_id = b.id
+    LEFT JOIN report_status rs  ON i.status_id = rs.id
+    ORDER BY i.created_at DESC
+    LIMIT 10
+
+[24-Feb-2026 20:46:27 Asia/Manila] FlashCru Query Error: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'emergency_db.report_status' doesn't exist | SQL: 
+    SELECT t.*,
+        COUNT(DISTINCT tm.team_mem_id) AS member_count,
+        SUM(CASE WHEN rs.name IN ('Dispatched','Ongoing') THEN 1 ELSE 0 END) AS on_scene,
+        SUM(CASE WHEN rs.name = 'Resolved' THEN 1 ELSE 0 END) AS resolved_count
+    FROM teams t
+    LEFT JOIN team_members tm ON t.team_id = tm.team_id
+    LEFT JOIN incidents i     ON t.team_id = i.assigned_team_id
+    LEFT JOIN report_status rs ON i.status_id = rs.id
+    GROUP BY t.team_id
+    ORDER BY t.status, t.team_name
+
+[24-Feb-2026 20:46:31 Asia/Manila] FlashCru Query Error: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'emergency_db.incident_types' doesn't exist | SQL: 
+    SELECT i.*,
+           t.team_name,
+           t.team_id,
+           u.full_name         AS reporter,
+           it.name             AS type_name,
+           it.icon             AS type_icon,
+           it.color            AS type_color,
+           b.name              AS barangay_name,
+           rs.name             AS status_name,
+           rs.color            AS status_color,
+           rs.id               AS status_id
+    FROM incidents i
+    LEFT JOIN teams t           ON i.assigned_team_id = t.team_id
+    LEFT JOIN users u           ON i.user_id = u.user_id
+    LEFT JOIN incident_types it ON i.incident_type_id = it.id
+    LEFT JOIN barangays b       ON i.barangay_id = b.id
+    LEFT JOIN report_status rs  ON i.status_id = rs.id
+    WHERE 1=1
+    ORDER BY i.created_at DESC
+
+[24-Feb-2026 20:46:31 Asia/Manila] FlashCru Query Error: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'emergency_db.report_status' doesn't exist | SQL: SELECT * FROM report_status ORDER BY id ASC
+[24-Feb-2026 20:46:31 Asia/Manila] FlashCru Query Error: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'emergency_db.incident_types' doesn't exist | SQL: SELECT * FROM incident_types ORDER BY name ASC
+[24-Feb-2026 20:51:22 Asia/Manila] FlashCru Query Error: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'emergency_db.report_status' doesn't exist | SQL: 
+    SELECT t.*,
+           COUNT(DISTINCT tm.team_mem_id) AS member_count,
+           SUM(CASE WHEN rs.name IN ('Dispatched','Ongoing') THEN 1 ELSE 0 END) AS active_incidents
+    FROM teams t
+    LEFT JOIN team_members tm  ON t.team_id = tm.team_id
+    LEFT JOIN incidents i      ON t.team_id = i.assigned_team_id
+    LEFT JOIN report_status rs ON i.status_id = rs.id
+    GROUP BY t.team_id
+    ORDER BY t.status, t.team_name
+
+[24-Feb-2026 20:51:46 Asia/Manila] FlashCru Query Error: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'emergency_db.report_status' doesn't exist | SQL: 
+    SELECT
+        SUM(CASE WHEN rs.name = 'Pending'    THEN 1 ELSE 0 END) AS pending,
+        SUM(CASE WHEN rs.name = 'Dispatched' THEN 1 ELSE 0 END) AS dispatched,
+        SUM(CASE WHEN rs.name = 'Ongoing'    THEN 1 ELSE 0 END) AS ongoing,
+        SUM(CASE WHEN rs.name = 'Resolved'   THEN 1 ELSE 0 END) AS resolved,
+        SUM(CASE WHEN rs.name = 'Cancelled'  THEN 1 ELSE 0 END) AS cancelled,
+        COUNT(*) AS total
+    FROM incidents i
+    LEFT JOIN report_status rs ON i.status_id = rs.id
+
+[24-Feb-2026 20:51:46 Asia/Manila] FlashCru Query Error: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'emergency_db.incident_types' doesn't exist | SQL: 
+    SELECT i.*,
+           t.team_name,
+           u.full_name        AS reporter,
+           it.name            AS type_name,
+           it.icon            AS type_icon,
+           it.color           AS type_color,
+           b.name             AS barangay_name,
+           rs.name            AS status_name,
+           rs.color           AS status_color
+    FROM incidents i
+    LEFT JOIN teams t           ON i.assigned_team_id = t.team_id
+    LEFT JOIN users u           ON i.user_id = u.user_id
+    LEFT JOIN incident_types it ON i.incident_type_id = it.id
+    LEFT JOIN barangays b       ON i.barangay_id = b.id
+    LEFT JOIN report_status rs  ON i.status_id = rs.id
+    ORDER BY i.created_at DESC
+    LIMIT 10
+
+[24-Feb-2026 20:51:46 Asia/Manila] FlashCru Query Error: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'emergency_db.report_status' doesn't exist | SQL: 
+    SELECT t.*,
+        COUNT(DISTINCT tm.team_mem_id) AS member_count,
+        SUM(CASE WHEN rs.name IN ('Dispatched','Ongoing') THEN 1 ELSE 0 END) AS on_scene,
+        SUM(CASE WHEN rs.name = 'Resolved' THEN 1 ELSE 0 END) AS resolved_count
+    FROM teams t
+    LEFT JOIN team_members tm ON t.team_id = tm.team_id
+    LEFT JOIN incidents i     ON t.team_id = i.assigned_team_id
+    LEFT JOIN report_status rs ON i.status_id = rs.id
+    GROUP BY t.team_id
+    ORDER BY t.status, t.team_name
+
+[24-Feb-2026 20:55:33 Asia/Manila] FlashCru Query Error: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'emergency_db.report_status' doesn't exist | SQL: 
+    SELECT
+        SUM(CASE WHEN rs.name = 'Pending'    THEN 1 ELSE 0 END) AS pending,
+        SUM(CASE WHEN rs.name = 'Dispatched' THEN 1 ELSE 0 END) AS dispatched,
+        SUM(CASE WHEN rs.name = 'Ongoing'    THEN 1 ELSE 0 END) AS ongoing,
+        SUM(CASE WHEN rs.name = 'Resolved'   THEN 1 ELSE 0 END) AS resolved,
+        SUM(CASE WHEN rs.name = 'Cancelled'  THEN 1 ELSE 0 END) AS cancelled,
+        COUNT(*) AS total
+    FROM incidents i
+    LEFT JOIN report_status rs ON i.status_id = rs.id
+
+[24-Feb-2026 20:55:33 Asia/Manila] FlashCru Query Error: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'emergency_db.incident_types' doesn't exist | SQL: 
+    SELECT i.*,
+           t.team_name,
+           u.full_name        AS reporter,
+           it.name            AS type_name,
+           it.icon            AS type_icon,
+           it.color           AS type_color,
+           b.name             AS barangay_name,
+           rs.name            AS status_name,
+           rs.color           AS status_color
+    FROM incidents i
+    LEFT JOIN teams t           ON i.assigned_team_id = t.team_id
+    LEFT JOIN users u           ON i.user_id = u.user_id
+    LEFT JOIN incident_types it ON i.incident_type_id = it.id
+    LEFT JOIN barangays b       ON i.barangay_id = b.id
+    LEFT JOIN report_status rs  ON i.status_id = rs.id
+    ORDER BY i.created_at DESC
+    LIMIT 10
+
+[24-Feb-2026 20:55:33 Asia/Manila] FlashCru Query Error: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'emergency_db.report_status' doesn't exist | SQL: 
+    SELECT t.*,
+        COUNT(DISTINCT tm.team_mem_id) AS member_count,
+        SUM(CASE WHEN rs.name IN ('Dispatched','Ongoing') THEN 1 ELSE 0 END) AS on_scene,
+        SUM(CASE WHEN rs.name = 'Resolved' THEN 1 ELSE 0 END) AS resolved_count
+    FROM teams t
+    LEFT JOIN team_members tm ON t.team_id = tm.team_id
+    LEFT JOIN incidents i     ON t.team_id = i.assigned_team_id
+    LEFT JOIN report_status rs ON i.status_id = rs.id
+    GROUP BY t.team_id
+    ORDER BY t.status, t.team_name
+
+[24-Feb-2026 20:55:37 Asia/Manila] FlashCru Query Error: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'emergency_db.report_status' doesn't exist | SQL: 
+    SELECT
+        SUM(CASE WHEN rs.name = 'Pending'    THEN 1 ELSE 0 END) AS pending,
+        SUM(CASE WHEN rs.name = 'Dispatched' THEN 1 ELSE 0 END) AS dispatched,
+        SUM(CASE WHEN rs.name = 'Ongoing'    THEN 1 ELSE 0 END) AS ongoing,
+        SUM(CASE WHEN rs.name = 'Resolved'   THEN 1 ELSE 0 END) AS resolved,
+        SUM(CASE WHEN rs.name = 'Cancelled'  THEN 1 ELSE 0 END) AS cancelled,
+        COUNT(*) AS total
+    FROM incidents i
+    LEFT JOIN report_status rs ON i.status_id = rs.id
+
+[24-Feb-2026 20:55:37 Asia/Manila] FlashCru Query Error: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'emergency_db.incident_types' doesn't exist | SQL: 
+    SELECT i.*,
+           t.team_name,
+           u.full_name        AS reporter,
+           it.name            AS type_name,
+           it.icon            AS type_icon,
+           it.color           AS type_color,
+           b.name             AS barangay_name,
+           rs.name            AS status_name,
+           rs.color           AS status_color
+    FROM incidents i
+    LEFT JOIN teams t           ON i.assigned_team_id = t.team_id
+    LEFT JOIN users u           ON i.user_id = u.user_id
+    LEFT JOIN incident_types it ON i.incident_type_id = it.id
+    LEFT JOIN barangays b       ON i.barangay_id = b.id
+    LEFT JOIN report_status rs  ON i.status_id = rs.id
+    ORDER BY i.created_at DESC
+    LIMIT 10
+
+[24-Feb-2026 20:55:37 Asia/Manila] FlashCru Query Error: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'emergency_db.report_status' doesn't exist | SQL: 
+    SELECT t.*,
+        COUNT(DISTINCT tm.team_mem_id) AS member_count,
+        SUM(CASE WHEN rs.name IN ('Dispatched','Ongoing') THEN 1 ELSE 0 END) AS on_scene,
+        SUM(CASE WHEN rs.name = 'Resolved' THEN 1 ELSE 0 END) AS resolved_count
+    FROM teams t
+    LEFT JOIN team_members tm ON t.team_id = tm.team_id
+    LEFT JOIN incidents i     ON t.team_id = i.assigned_team_id
+    LEFT JOIN report_status rs ON i.status_id = rs.id
+    GROUP BY t.team_id
+    ORDER BY t.status, t.team_name
+
+[24-Feb-2026 20:55:43 Asia/Manila] FlashCru Query Error: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'emergency_db.report_status' doesn't exist | SQL: 
+    SELECT
+        SUM(CASE WHEN rs.name = 'Pending'    THEN 1 ELSE 0 END) AS pending,
+        SUM(CASE WHEN rs.name = 'Dispatched' THEN 1 ELSE 0 END) AS dispatched,
+        SUM(CASE WHEN rs.name = 'Ongoing'    THEN 1 ELSE 0 END) AS ongoing,
+        SUM(CASE WHEN rs.name = 'Resolved'   THEN 1 ELSE 0 END) AS resolved,
+        SUM(CASE WHEN rs.name = 'Cancelled'  THEN 1 ELSE 0 END) AS cancelled,
+        COUNT(*) AS total
+    FROM incidents i
+    LEFT JOIN report_status rs ON i.status_id = rs.id
+
+[24-Feb-2026 20:55:43 Asia/Manila] FlashCru Query Error: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'emergency_db.incident_types' doesn't exist | SQL: 
+    SELECT i.*,
+           t.team_name,
+           u.full_name        AS reporter,
+           it.name            AS type_name,
+           it.icon            AS type_icon,
+           it.color           AS type_color,
+           b.name             AS barangay_name,
+           rs.name            AS status_name,
+           rs.color           AS status_color
+    FROM incidents i
+    LEFT JOIN teams t           ON i.assigned_team_id = t.team_id
+    LEFT JOIN users u           ON i.user_id = u.user_id
+    LEFT JOIN incident_types it ON i.incident_type_id = it.id
+    LEFT JOIN barangays b       ON i.barangay_id = b.id
+    LEFT JOIN report_status rs  ON i.status_id = rs.id
+    ORDER BY i.created_at DESC
+    LIMIT 10
+
+[24-Feb-2026 20:55:43 Asia/Manila] FlashCru Query Error: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'emergency_db.report_status' doesn't exist | SQL: 
+    SELECT t.*,
+        COUNT(DISTINCT tm.team_mem_id) AS member_count,
+        SUM(CASE WHEN rs.name IN ('Dispatched','Ongoing') THEN 1 ELSE 0 END) AS on_scene,
+        SUM(CASE WHEN rs.name = 'Resolved' THEN 1 ELSE 0 END) AS resolved_count
+    FROM teams t
+    LEFT JOIN team_members tm ON t.team_id = tm.team_id
+    LEFT JOIN incidents i     ON t.team_id = i.assigned_team_id
+    LEFT JOIN report_status rs ON i.status_id = rs.id
+    GROUP BY t.team_id
+    ORDER BY t.status, t.team_name
+
+[24-Feb-2026 20:56:03 Asia/Manila] FlashCru Query Error: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'emergency_db.incident_types' doesn't exist | SQL: 
+    SELECT i.*,
+           t.team_name,
+           t.team_id,
+           u.full_name         AS reporter,
+           it.name             AS type_name,
+           it.icon             AS type_icon,
+           it.color            AS type_color,
+           b.name              AS barangay_name,
+           rs.name             AS status_name,
+           rs.color            AS status_color,
+           rs.id               AS status_id
+    FROM incidents i
+    LEFT JOIN teams t           ON i.assigned_team_id = t.team_id
+    LEFT JOIN users u           ON i.user_id = u.user_id
+    LEFT JOIN incident_types it ON i.incident_type_id = it.id
+    LEFT JOIN barangays b       ON i.barangay_id = b.id
+    LEFT JOIN report_status rs  ON i.status_id = rs.id
+    WHERE 1=1
+    ORDER BY i.created_at DESC
+
+[24-Feb-2026 20:56:03 Asia/Manila] FlashCru Query Error: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'emergency_db.report_status' doesn't exist | SQL: SELECT * FROM report_status ORDER BY id ASC
+[24-Feb-2026 20:56:03 Asia/Manila] FlashCru Query Error: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'emergency_db.incident_types' doesn't exist | SQL: SELECT * FROM incident_types ORDER BY name ASC
+[24-Feb-2026 20:56:08 Asia/Manila] FlashCru Query Error: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'emergency_db.report_status' doesn't exist | SQL: 
+    SELECT t.*,
+           COUNT(DISTINCT tm.team_mem_id) AS member_count,
+           SUM(CASE WHEN rs.name IN ('Dispatched','Ongoing') THEN 1 ELSE 0 END) AS active_incidents
+    FROM teams t
+    LEFT JOIN team_members tm  ON t.team_id = tm.team_id
+    LEFT JOIN incidents i      ON t.team_id = i.assigned_team_id
+    LEFT JOIN report_status rs ON i.status_id = rs.id
+    GROUP BY t.team_id
+    ORDER BY t.status, t.team_name
+

@@ -2,6 +2,7 @@
 /**
  * FlashCru Emergency Response System
  * Shared Sidebar — Red/White/Blue Theme v3.0
+ * Updated: Added Report Incident + My Reports links
  */
 $current_page = basename($_SERVER['PHP_SELF']);
 ?>
@@ -35,15 +36,19 @@ $current_page = basename($_SERVER['PHP_SELF']);
     <?php
     $nav_sections = [
       'Main' => [
-        ['dashboard.php', '🏠', 'Dashboard',  null],
-        ['incidents.php', '🚨', 'Incidents',  '6'],
-        ['teams.php',     '👥', 'Teams',      null],
+        ['dashboard.php',        '🏠', 'Dashboard',       null],
+        ['incidents.php',        '🚨', 'Incidents',        null],
+        ['teams.php',            '👥', 'Teams',            null],
+      ],
+      'Reports' => [
+        ['report_incident.php',  '📝', 'Report Incident',  null],
+        ['my_reports.php',       '📋', 'My Reports',       null],
       ],
       'Analytics' => [
-        ['reports.php',   '📊', 'Reports',    null],
+        ['reports.php',          '📊', 'Reports',          null],
       ],
       'System' => [
-        ['settings.php',  '⚙️', 'Settings',   null],
+        ['settings.php',         '⚙️', 'Settings',         null],
       ],
     ];
     foreach ($nav_sections as $section => $items):
@@ -51,12 +56,14 @@ $current_page = basename($_SERVER['PHP_SELF']);
     <div style="font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:rgba(255,255,255,0.28);padding:0 10px;margin:14px 0 5px;"><?php echo $section; ?></div>
     <?php foreach ($items as [$page, $icon, $label, $badge]):
       $active = ($current_page === $page);
-      $style = $active
+      $style  = $active
         ? 'background:rgba(255,255,255,0.16);color:#fff;font-weight:600;'
         : 'color:rgba(255,255,255,0.58);';
     ?>
     <a href="<?php echo $page; ?>"
-       style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;font-size:13.5px;font-weight:500;text-decoration:none;transition:all 0.18s;margin-bottom:2px;position:relative;<?php echo $style; ?>">
+       style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;font-size:13.5px;font-weight:500;text-decoration:none;transition:all 0.18s;margin-bottom:2px;position:relative;<?php echo $style; ?>"
+       onmouseover="if(!this.classList.contains('active-link')){this.style.background='rgba(255,255,255,0.10)';this.style.color='#fff';}"
+       onmouseout="<?php echo $active ? '' : "this.style.background='';this.style.color='rgba(255,255,255,0.58)';"; ?>">
       <?php if ($active): ?>
       <span style="position:absolute;left:0;top:22%;bottom:22%;width:3px;background:#F2C4C8;border-radius:0 3px 3px 0;"></span>
       <?php endif; ?>
@@ -85,7 +92,8 @@ $current_page = basename($_SERVER['PHP_SELF']);
         </div>
       </div>
     </div>
-    <a href="logout.php" style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;color:rgba(255,180,180,0.80);font-size:13px;font-weight:600;text-decoration:none;transition:all 0.18s;font-family:'Sora',sans-serif;"
+    <a href="logout.php"
+       style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;color:rgba(255,180,180,0.80);font-size:13px;font-weight:600;text-decoration:none;transition:all 0.18s;font-family:'Sora',sans-serif;"
        onmouseover="this.style.background='rgba(255,255,255,0.10)';this.style.color='#fff';"
        onmouseout="this.style.background='';this.style.color='rgba(255,180,180,0.80)';">
       <span style="font-size:15px;">🚪</span> Log Out

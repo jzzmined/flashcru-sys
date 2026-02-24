@@ -2,6 +2,7 @@
 /**
  * FlashCru Emergency Response System
  * Incidents Management — Red/White/Blue Theme v3.0
+ * Updated: Uses barangays, incident_types, report_status tables
  */
 
 require_once 'includes/config.php';
@@ -13,59 +14,43 @@ requireLogin();
 $page_title = 'Incidents';
 $db = new Database();
 
-// Handle Delete
+// ── Handle Delete ─────────────────────────────────────────────
 if (isset($_GET['delete']) && isAdmin()) {
     $id = (int)$_GET['delete'];
-    $db->delete('incidents', 'incident_id = :id', ['id' => $id]);
+    $db->delete('incidents', 'id = :id', ['id' => $id]);
     logActivity($_SESSION['user_id'], $id, 'incident_deleted', 'Incident #' . $id . ' deleted');
     header('Location: incidents.php?msg=deleted');
     exit();
 }
 
-// Handle Status Update
+// ── Handle Status Update ──────────────────────────────────────
 if (isset($_POST['update_status'])) {
-    $id     = (int)$_POST['incident_id'];
-    $status = sanitize($_POST['status']);
-    $resolved_at = ($status === 'resolved') ? date('Y-m-d H:i:s') : null;
+    $id        = (int)$_POST['incident_id'];
+    $status_id = (int)$_POST['status_id'];
     $db->update('incidents',
-        ['status' => $status, 'resolved_at' => $resolved_at],
-        'incident_id = :id',
-        ['id' => $id]
+        ['status_id' => $status_id, 'updated_at' => date('Y-m-d H:i:s')],
+        'id = :id', ['id' => $id]
     );
-    logActivity($_SESSION['user_id'], $id, 'status_updated', 'Status changed to ' . $status);
+    logActivity($_SESSION['user_id'], $id, 'status_updated', 'Status updated for Incident #' . $id);
     header('Location: incidents.php?msg=updated');
     exit();
 }
 
-// Handle Create/Edit
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_incident'])) {
-    $data = [
-        'incident_type' => sanitize($_POST['incident_type']),
-        'title'         => sanitize($_POST['title']),
-        'description'   => sanitize($_POST['description']),
-        'location'      => sanitize($_POST['location']),
-        'latitude'      => !empty($_POST['latitude'])  ? (float)$_POST['latitude']  : null,
-        'longitude'     => !empty($_POST['longitude']) ? (float)$_POST['longitude'] : null,
-        'status'        => sanitize($_POST['status']),
-        'priority'      => sanitize($_POST['priority']),
-        'assigned_team' => !empty($_POST['assigned_team']) ? (int)$_POST['assigned_team'] : null,
-        'reported_by'   => $_SESSION['user_id']
-    ];
-
-    if (!empty($_POST['incident_id'])) {
-        $id = (int)$_POST['incident_id'];
-        $db->update('incidents', $data, 'incident_id = :id', ['id' => $id]);
-        logActivity($_SESSION['user_id'], $id, 'incident_updated', 'Incident updated');
-        header('Location: incidents.php?msg=updated');
-    } else {
-        $new_id = $db->insert('incidents', $data);
-        logActivity($_SESSION['user_id'], $new_id, 'incident_created', 'New incident: ' . $data['title']);
-        header('Location: incidents.php?msg=created');
-    }
+// ── Handle Assign Team ────────────────────────────────────────
+if (isset($_POST['assign_team'])) {
+    $id      = (int)$_POST['incident_id'];
+    $team_id = (int)$_POST['team_id'];
+    // Set to Dispatched (status_id = 2) when assigning
+    $db->update('incidents',
+        ['assigned_team_id' => $team_id, 'status_id' => 2, 'updated_at' => date('Y-m-d H:i:s')],
+        'id = :id', ['id' => $id]
+    );
+    logActivity($_SESSION['user_id'], $id, 'team_assigned', 'Team assigned to Incident #' . $id);
+    header('Location: incidents.php?msg=assigned');
     exit();
 }
 
-// Filters
+// ── Filters ───────────────────────────────────────────────────
 $filter_status = sanitize($_GET['status'] ?? 'all');
 $filter_type   = sanitize($_GET['type']   ?? 'all');
 $search        = sanitize($_GET['search'] ?? '');
@@ -74,34 +59,46 @@ $where  = "1=1";
 $params = [];
 
 if ($filter_status !== 'all') {
-    $where .= " AND i.status = :status";
+    $where .= " AND rs.name = :status";
     $params['status'] = $filter_status;
 }
 if ($filter_type !== 'all') {
-    $where .= " AND i.incident_type = :type";
+    $where .= " AND it.id = :type";
     $params['type'] = $filter_type;
 }
 if (!empty($search)) {
-    $where .= " AND (i.title LIKE :search OR i.location LIKE :search2)";
+    $where .= " AND (u.full_name LIKE :search OR b.name LIKE :search2 OR i.description LIKE :search3)";
     $params['search']  = '%' . $search . '%';
     $params['search2'] = '%' . $search . '%';
+    $params['search3'] = '%' . $search . '%';
 }
 
 $incidents = $db->fetchAll("
-    SELECT i.*, t.team_name, u.full_name AS reporter
+    SELECT i.*,
+           t.team_name,
+           t.team_id,
+           u.full_name         AS reporter,
+           it.name             AS type_name,
+           it.icon             AS type_icon,
+           it.color            AS type_color,
+           b.name              AS barangay_name,
+           rs.name             AS status_name,
+           rs.color            AS status_color,
+           rs.id               AS status_id
     FROM incidents i
-    LEFT JOIN teams t ON i.assigned_team = t.team_id
-    LEFT JOIN users u ON i.reported_by   = u.user_id
+    LEFT JOIN teams t           ON i.assigned_team_id = t.team_id
+    LEFT JOIN users u           ON i.user_id = u.user_id
+    LEFT JOIN incident_types it ON i.incident_type_id = it.id
+    LEFT JOIN barangays b       ON i.barangay_id = b.id
+    LEFT JOIN report_status rs  ON i.status_id = rs.id
     WHERE $where
-    ORDER BY FIELD(i.status,'critical','active','pending','resolved'), i.created_at DESC
+    ORDER BY i.created_at DESC
 ", $params);
 
-$teams = $db->fetchAll("SELECT team_id, team_name, team_type, status FROM teams ORDER BY team_name");
-
-$edit_incident = null;
-if (isset($_GET['edit'])) {
-    $edit_incident = $db->fetchOne("SELECT * FROM incidents WHERE incident_id = ?", [(int)$_GET['edit']]);
-}
+// Fetch dropdown data
+$all_teams      = $db->fetchAll("SELECT team_id, team_name, team_type, status FROM teams ORDER BY team_name");
+$all_statuses   = $db->fetchAll("SELECT * FROM report_status ORDER BY id ASC");
+$all_types      = $db->fetchAll("SELECT * FROM incident_types ORDER BY name ASC");
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -122,12 +119,9 @@ if (isset($_GET['edit'])) {
             <!-- Page Header -->
             <div class="flex-between mb-20">
                 <div>
-                    <h2 style="font-size:22px;font-weight:800;color:var(--navy);">🚨 Incidents</h2>
-                    <p class="text-muted" style="font-size:13px;margin-top:3px;">Manage all emergency incidents</p>
+                    <h2 style="font-size:22px;font-weight:800;color:var(--navy);">🚨 Incident Reports</h2>
+                    <p class="text-muted" style="font-size:13px;margin-top:3px;">Manage and track all emergency incident reports</p>
                 </div>
-                <?php if (isAdmin() || isDispatcher()): ?>
-                <button class="btn btn-primary" onclick="openModal('incidentModal')">+ New Incident</button>
-                <?php endif; ?>
             </div>
 
             <?php if (isset($_GET['msg'])): ?>
@@ -138,36 +132,39 @@ if (isset($_GET['edit'])) {
             <div class="panel mb-24" style="padding:16px 20px;">
                 <form method="GET" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
                     <input type="text" name="search" class="form-control"
-                           placeholder="🔍 Search incidents..."
+                           placeholder="🔍 Search reporter, barangay, description..."
                            value="<?php echo htmlspecialchars($search); ?>"
-                           style="max-width:220px;">
+                           style="max-width:260px;">
 
-                    <select name="status" class="form-control" style="max-width:150px;">
-                        <option value="all">All Status</option>
-                        <option value="critical" <?php echo $filter_status==='critical'?'selected':''; ?>>🚨 Critical</option>
-                        <option value="active"   <?php echo $filter_status==='active'?'selected':''; ?>>⚡ Active</option>
-                        <option value="pending"  <?php echo $filter_status==='pending'?'selected':''; ?>>⏳ Pending</option>
-                        <option value="resolved" <?php echo $filter_status==='resolved'?'selected':''; ?>>✅ Resolved</option>
+                    <select name="status" class="form-control" style="max-width:160px;">
+                        <option value="all">All Statuses</option>
+                        <?php foreach ($all_statuses as $s): ?>
+                        <option value="<?php echo htmlspecialchars($s['name']); ?>"
+                            <?php echo $filter_status === $s['name'] ? 'selected' : ''; ?>>
+                            <?php echo htmlspecialchars($s['name']); ?>
+                        </option>
+                        <?php endforeach; ?>
                     </select>
 
-                    <select name="type" class="form-control" style="max-width:150px;">
+                    <select name="type" class="form-control" style="max-width:160px;">
                         <option value="all">All Types</option>
-                        <option value="fire"     <?php echo $filter_type==='fire'?'selected':''; ?>>🔥 Fire</option>
-                        <option value="medical"  <?php echo $filter_type==='medical'?'selected':''; ?>>🚑 Medical</option>
-                        <option value="accident" <?php echo $filter_type==='accident'?'selected':''; ?>>🚗 Accident</option>
-                        <option value="rescue"   <?php echo $filter_type==='rescue'?'selected':''; ?>>🚒 Rescue</option>
-                        <option value="other"    <?php echo $filter_type==='other'?'selected':''; ?>>⚠️ Other</option>
+                        <?php foreach ($all_types as $it): ?>
+                        <option value="<?php echo $it['id']; ?>"
+                            <?php echo $filter_type == $it['id'] ? 'selected' : ''; ?>>
+                            <?php echo htmlspecialchars($it['name']); ?>
+                        </option>
+                        <?php endforeach; ?>
                     </select>
 
                     <button type="submit" class="btn btn-primary btn-sm">Filter</button>
-                    <a href="incidents.php"  class="btn btn-secondary btn-sm">Reset</a>
+                    <a href="incidents.php" class="btn btn-secondary btn-sm">Reset</a>
                 </form>
             </div>
 
             <!-- Incidents Table -->
             <div class="panel">
                 <div class="panel-header">
-                    <h3 class="panel-title">📋 All Incidents
+                    <h3 class="panel-title">📋 All Reports
                         <span style="font-size:13px;color:var(--gray-400);font-weight:400;">
                             (<?php echo count($incidents); ?> result<?php echo count($incidents) !== 1 ? 's' : ''; ?>)
                         </span>
@@ -178,54 +175,90 @@ if (isset($_GET['edit'])) {
                         <thead>
                             <tr>
                                 <th>ID</th>
-                                <th>Title &amp; Location</th>
                                 <th>Type</th>
+                                <th>Reporter</th>
+                                <th>Location</th>
+                                <th>Description</th>
                                 <th>Status</th>
-                                <th>Priority</th>
                                 <th>Assigned Team</th>
-                                <th>Reported</th>
+                                <th>Date</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php if (empty($incidents)): ?>
-                            <tr><td colspan="8">
+                            <tr><td colspan="9">
                                 <div class="empty-state">No incidents found matching your filters.</div>
                             </td></tr>
                             <?php else: ?>
-                            <?php
-                            $type_icons   = ['fire'=>'🔥','medical'=>'🚑','rescue'=>'🚒','accident'=>'🚗','other'=>'⚠️'];
-                            $type_classes = ['fire'=>'fire','medical'=>'medical','rescue'=>'rescue','accident'=>'accident','other'=>'other'];
-                            foreach ($incidents as $inc):
-                                $icon   = $type_icons[$inc['incident_type']] ?? '⚠️';
-                                $tclass = $type_classes[$inc['incident_type']] ?? 'other';
+                            <?php foreach ($incidents as $inc):
+                                $sc = $inc['status_color'] ?? '#6B7280';
+                                $sn = $inc['status_name']  ?? 'Unknown';
+                                $tc = $inc['type_color']   ?? '#A63244';
                             ?>
                             <tr>
-                                <td><span class="incident-id">#<?php echo $inc['incident_id']; ?></span></td>
+                                <td><span class="incident-id">#<?php echo $inc['id']; ?></span></td>
                                 <td>
-                                    <div class="incident-title"><?php echo htmlspecialchars($inc['title']); ?></div>
-                                    <div class="incident-addr">📍 <?php echo htmlspecialchars($inc['location']); ?></div>
+                                    <span class="type-badge" style="background:<?php echo $tc; ?>18;color:<?php echo $tc; ?>;border:1px solid <?php echo $tc; ?>33;">
+                                        <?php if (!empty($inc['type_icon'])): ?>
+                                            <i class="<?php echo htmlspecialchars($inc['type_icon']); ?>"></i>
+                                        <?php endif; ?>
+                                        <?php echo htmlspecialchars($inc['type_name'] ?? '—'); ?>
+                                    </span>
                                 </td>
-                                <td><span class="type-badge <?php echo $tclass; ?>"><?php echo $icon; ?> <?php echo ucfirst($inc['incident_type']); ?></span></td>
-                                <td><span class="badge badge-<?php echo $inc['status']; ?>"><?php echo strtoupper($inc['status']); ?></span></td>
-                                <td><span class="priority-badge <?php echo strtoupper($inc['priority']); ?>"><?php echo strtoupper($inc['priority']); ?></span></td>
+                                <td style="font-size:12.5px;">
+                                    <div style="font-weight:600;"><?php echo htmlspecialchars($inc['reporter'] ?? '—'); ?></div>
+                                    <?php if (!empty($inc['contact_number'])): ?>
+                                        <div style="font-size:11px;color:var(--gray-400);"><?php echo htmlspecialchars($inc['contact_number']); ?></div>
+                                    <?php endif; ?>
+                                </td>
                                 <td>
-                                    <?php if ($inc['team_name']): ?>
+                                    <div class="incident-title"><?php echo htmlspecialchars($inc['barangay_name'] ?? '—'); ?></div>
+                                    <?php if (!empty($inc['street_landmark'])): ?>
+                                        <div class="incident-addr">📍 <?php echo htmlspecialchars($inc['street_landmark']); ?></div>
+                                    <?php endif; ?>
+                                </td>
+                                <td style="max-width:180px;font-size:12px;color:var(--gray-500);">
+                                    <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                                        <?php echo htmlspecialchars($inc['description'] ?? '—'); ?>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span style="background:<?php echo $sc; ?>22;color:<?php echo $sc; ?>;border:1px solid <?php echo $sc; ?>44;font-size:10px;font-weight:700;padding:3px 10px;border-radius:99px;text-transform:uppercase;letter-spacing:0.04em;white-space:nowrap;">
+                                        <?php echo $sn; ?>
+                                    </span>
+                                </td>
+                                <td>
+                                    <?php if (!empty($inc['team_name'])): ?>
                                         <span class="team-text"><?php echo htmlspecialchars($inc['team_name']); ?></span>
                                     <?php else: ?>
                                         <span class="team-unassigned">Unassigned</span>
                                     <?php endif; ?>
                                 </td>
-                                <td class="text-muted" style="font-size:12px;white-space:nowrap;">
-                                    <?php echo date('M j, Y', strtotime($inc['created_at'])); ?>
+                                <td class="text-muted" style="font-size:11px;white-space:nowrap;">
+                                    <?php echo date('M j, Y', strtotime($inc['created_at'])); ?><br>
+                                    <span style="color:var(--gray-400);"><?php echo date('g:i A', strtotime($inc['created_at'])); ?></span>
                                 </td>
                                 <td>
                                     <div class="flex gap-8">
-                                        <a href="incidents.php?edit=<?php echo $inc['incident_id']; ?>" class="btn btn-secondary btn-sm">✏️</a>
+                                        <!-- View -->
+                                        <button class="btn btn-secondary btn-sm"
+                                                onclick="openView(<?php echo htmlspecialchars(json_encode($inc)); ?>)"
+                                                title="View Details">👁️</button>
+                                        <!-- Update Status -->
+                                        <?php if (isAdmin() || isDispatcher()): ?>
+                                        <button class="btn btn-secondary btn-sm"
+                                                onclick="openStatusModal(<?php echo $inc['id']; ?>, <?php echo $inc['status_id'] ?? 1; ?>)"
+                                                title="Update Status">📝</button>
+                                        <!-- Assign Team -->
+                                        <button class="btn btn-primary btn-sm"
+                                                onclick="openAssignModal(<?php echo $inc['id']; ?>, <?php echo $inc['team_id'] ?? 'null'; ?>)"
+                                                title="Assign Team">👥</button>
+                                        <?php endif; ?>
                                         <?php if (isAdmin()): ?>
-                                        <a href="incidents.php?delete=<?php echo $inc['incident_id']; ?>"
+                                        <a href="incidents.php?delete=<?php echo $inc['id']; ?>"
                                            class="btn btn-danger btn-sm"
-                                           onclick="return confirm('Delete this incident?')">🗑️</a>
+                                           onclick="return confirm('Delete this incident report?')">🗑️</a>
                                         <?php endif; ?>
                                     </div>
                                 </td>
@@ -241,104 +274,78 @@ if (isset($_GET['edit'])) {
     </div><!-- /main-content -->
 </div><!-- /dashboard-wrapper -->
 
-<!-- ── Add / Edit Incident Modal ─────────────────────────────── -->
-<div class="modal-overlay <?php echo $edit_incident ? 'active' : ''; ?>" id="incidentModal">
+<!-- ── View Detail Modal ──────────────────────────────────────── -->
+<div class="modal-overlay" id="viewModal">
     <div class="modal-box">
         <div class="modal-header">
-            <h3 class="modal-title"><?php echo $edit_incident ? '✏️ Edit Incident' : '+ New Incident'; ?></h3>
-            <button class="modal-close" onclick="closeModal('incidentModal')">×</button>
+            <h3 class="modal-title" id="viewModalTitle">📋 Incident Details</h3>
+            <button class="modal-close" onclick="closeModal('viewModal')">×</button>
+        </div>
+        <div class="modal-body" id="viewModalBody" style="font-size:13.5px;"></div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeModal('viewModal')">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── Update Status Modal ────────────────────────────────────── -->
+<div class="modal-overlay" id="statusModal">
+    <div class="modal-box" style="max-width:400px;">
+        <div class="modal-header">
+            <h3 class="modal-title">📝 Update Status</h3>
+            <button class="modal-close" onclick="closeModal('statusModal')">×</button>
         </div>
         <form method="POST">
             <div class="modal-body">
-                <input type="hidden" name="incident_id" value="<?php echo $edit_incident['incident_id'] ?? ''; ?>">
-
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-                    <div class="form-group">
-                        <label class="form-label">Incident Type *</label>
-                        <select name="incident_type" class="form-control" required>
-                            <option value="fire"     <?php echo ($edit_incident['incident_type']??'')==='fire'?'selected':''; ?>>🔥 Fire</option>
-                            <option value="medical"  <?php echo ($edit_incident['incident_type']??'')==='medical'?'selected':''; ?>>🚑 Medical</option>
-                            <option value="accident" <?php echo ($edit_incident['incident_type']??'')==='accident'?'selected':''; ?>>🚗 Accident</option>
-                            <option value="rescue"   <?php echo ($edit_incident['incident_type']??'')==='rescue'?'selected':''; ?>>🚒 Rescue</option>
-                            <option value="other"    <?php echo ($edit_incident['incident_type']??'')==='other'?'selected':''; ?>>⚠️ Other</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Priority *</label>
-                        <select name="priority" class="form-control" required>
-                            <option value="low"      <?php echo ($edit_incident['priority']??'')==='low'?'selected':''; ?>>Low</option>
-                            <option value="medium"   <?php echo ($edit_incident['priority']??'medium')==='medium'?'selected':''; ?>>Medium</option>
-                            <option value="high"     <?php echo ($edit_incident['priority']??'')==='high'?'selected':''; ?>>High</option>
-                            <option value="critical" <?php echo ($edit_incident['priority']??'')==='critical'?'selected':''; ?>>Critical</option>
-                        </select>
-                    </div>
-                </div>
-
+                <input type="hidden" name="incident_id" id="status_incident_id">
                 <div class="form-group">
-                    <label class="form-label">Title *</label>
-                    <input type="text" name="title" class="form-control" required
-                           value="<?php echo htmlspecialchars($edit_incident['title'] ?? ''); ?>"
-                           placeholder="Brief incident title">
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Location *</label>
-                    <input type="text" name="location" class="form-control" required
-                           value="<?php echo htmlspecialchars($edit_incident['location'] ?? ''); ?>"
-                           placeholder="Street address or landmark">
-                </div>
-
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-                    <div class="form-group">
-                        <label class="form-label">Latitude (GPS)</label>
-                        <input type="text" name="latitude" class="form-control"
-                               value="<?php echo $edit_incident['latitude'] ?? ''; ?>"
-                               placeholder="e.g. 7.0731">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Longitude (GPS)</label>
-                        <input type="text" name="longitude" class="form-control"
-                               value="<?php echo $edit_incident['longitude'] ?? ''; ?>"
-                               placeholder="e.g. 125.6128">
-                    </div>
-                </div>
-
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-                    <div class="form-group">
-                        <label class="form-label">Status *</label>
-                        <select name="status" class="form-control" required>
-                            <option value="pending"  <?php echo ($edit_incident['status']??'pending')==='pending'?'selected':''; ?>>⏳ Pending</option>
-                            <option value="active"   <?php echo ($edit_incident['status']??'')==='active'?'selected':''; ?>>⚡ Active</option>
-                            <option value="critical" <?php echo ($edit_incident['status']??'')==='critical'?'selected':''; ?>>🚨 Critical</option>
-                            <option value="resolved" <?php echo ($edit_incident['status']??'')==='resolved'?'selected':''; ?>>✅ Resolved</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Assign Team</label>
-                        <select name="assigned_team" class="form-control">
-                            <option value="">— No Team —</option>
-                            <?php foreach ($teams as $team): ?>
-                            <option value="<?php echo $team['team_id']; ?>"
-                                <?php echo ($edit_incident['assigned_team']??0)==$team['team_id']?'selected':''; ?>>
-                                <?php echo htmlspecialchars($team['team_name']); ?>
-                                (<?php echo $team['status']; ?>)
-                            </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Description</label>
-                    <textarea name="description" class="form-control" rows="3"
-                              placeholder="Detailed incident description..."><?php echo htmlspecialchars($edit_incident['description'] ?? ''); ?></textarea>
+                    <label class="form-label">New Status</label>
+                    <select name="status_id" id="status_select" class="form-control" required>
+                        <?php foreach ($all_statuses as $s): ?>
+                        <option value="<?php echo $s['id']; ?>"><?php echo htmlspecialchars($s['name']); ?></option>
+                        <?php endforeach; ?>
+                    </select>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" onclick="closeModal('incidentModal')">Cancel</button>
-                <button type="submit" name="save_incident" class="btn btn-primary">
-                    <?php echo $edit_incident ? 'Update Incident' : 'Create Incident'; ?>
-                </button>
+                <button type="button" class="btn btn-secondary" onclick="closeModal('statusModal')">Cancel</button>
+                <button type="submit" name="update_status" class="btn btn-primary">Update Status</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ── Assign Team Modal ──────────────────────────────────────── -->
+<div class="modal-overlay" id="assignModal">
+    <div class="modal-box" style="max-width:400px;">
+        <div class="modal-header">
+            <h3 class="modal-title">👥 Assign Team</h3>
+            <button class="modal-close" onclick="closeModal('assignModal')">×</button>
+        </div>
+        <form method="POST">
+            <div class="modal-body">
+                <input type="hidden" name="incident_id" id="assign_incident_id">
+                <div class="form-group">
+                    <label class="form-label">Select Response Team</label>
+                    <select name="team_id" id="assign_team_select" class="form-control" required>
+                        <option value="">— No Team —</option>
+                        <?php foreach ($all_teams as $team): ?>
+                        <option value="<?php echo $team['team_id']; ?>">
+                            <?php echo htmlspecialchars($team['team_name']); ?>
+                            (<?php echo ucfirst($team['status']); ?>)
+                        </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <div class="form-group" style="margin-top:10px;">
+                        <p style="font-size:12px;color:var(--gray-400);">
+                            ⚡ Assigning a team will automatically update the status to <strong>Dispatched</strong>.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('assignModal')">Cancel</button>
+                <button type="submit" name="assign_team" class="btn btn-primary">Confirm Assignment</button>
             </div>
         </form>
     </div>
@@ -346,9 +353,69 @@ if (isset($_GET['edit'])) {
 
 <script>
 function openModal(id)  { document.getElementById(id).classList.add('active'); }
-function closeModal(id) {
-    document.getElementById(id).classList.remove('active');
-    <?php if ($edit_incident): ?>window.location.href = 'incidents.php';<?php endif; ?>
+function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+function openStatusModal(incidentId, currentStatusId) {
+    document.getElementById('status_incident_id').value = incidentId;
+    document.getElementById('status_select').value = currentStatusId;
+    openModal('statusModal');
+}
+
+function openAssignModal(incidentId, currentTeamId) {
+    document.getElementById('assign_incident_id').value = incidentId;
+    if (currentTeamId) {
+        document.getElementById('assign_team_select').value = currentTeamId;
+    }
+    openModal('assignModal');
+}
+
+function openView(inc) {
+    const sc = inc.status_color || '#6B7280';
+    const sn = inc.status_name  || 'Unknown';
+    document.getElementById('viewModalTitle').textContent = '📋 Incident Report #' + inc.id;
+    document.getElementById('viewModalBody').innerHTML = `
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+            <tr style="border-bottom:1px solid #F3F4F6;">
+                <td style="padding:9px 0;color:#9CA3AF;width:38%;">Reporter</td>
+                <td style="padding:9px 0;font-weight:600;">${inc.reporter || '—'}</td>
+            </tr>
+            <tr style="border-bottom:1px solid #F3F4F6;">
+                <td style="padding:9px 0;color:#9CA3AF;">Contact</td>
+                <td style="padding:9px 0;">${inc.contact_number || '—'}</td>
+            </tr>
+            <tr style="border-bottom:1px solid #F3F4F6;">
+                <td style="padding:9px 0;color:#9CA3AF;">Incident Type</td>
+                <td style="padding:9px 0;font-weight:600;">${inc.type_name || '—'}</td>
+            </tr>
+            <tr style="border-bottom:1px solid #F3F4F6;">
+                <td style="padding:9px 0;color:#9CA3AF;">Barangay</td>
+                <td style="padding:9px 0;">${inc.barangay_name || '—'}</td>
+            </tr>
+            <tr style="border-bottom:1px solid #F3F4F6;">
+                <td style="padding:9px 0;color:#9CA3AF;">Street / Landmark</td>
+                <td style="padding:9px 0;">${inc.street_landmark || '—'}</td>
+            </tr>
+            <tr style="border-bottom:1px solid #F3F4F6;">
+                <td style="padding:9px 0;color:#9CA3AF;">Assigned Team</td>
+                <td style="padding:9px 0;">${inc.team_name || 'Unassigned'}</td>
+            </tr>
+            <tr style="border-bottom:1px solid #F3F4F6;">
+                <td style="padding:9px 0;color:#9CA3AF;">Status</td>
+                <td style="padding:9px 0;">
+                    <span style="background:${sc}22;color:${sc};border:1px solid ${sc}44;font-size:10px;font-weight:700;padding:3px 10px;border-radius:99px;text-transform:uppercase;">${sn}</span>
+                </td>
+            </tr>
+            <tr style="border-bottom:1px solid #F3F4F6;">
+                <td style="padding:9px 0;color:#9CA3AF;">Date Reported</td>
+                <td style="padding:9px 0;font-size:12px;">${inc.created_at || '—'}</td>
+            </tr>
+        </table>
+        <div style="margin-top:14px;">
+            <div style="font-size:11px;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">DESCRIPTION</div>
+            <div style="font-size:13px;color:#374151;line-height:1.6;">${inc.description || '—'}</div>
+        </div>
+    `;
+    openModal('viewModal');
 }
 </script>
 </body>
