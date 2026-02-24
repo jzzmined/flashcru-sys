@@ -56,9 +56,6 @@ $current_page = basename($_SERVER['PHP_SELF']);
     <div style="font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:rgba(255,255,255,0.28);padding:0 10px;margin:14px 0 5px;"><?php echo $section; ?></div>
     <?php foreach ($items as [$page, $icon, $label, $badge]):
       $active = ($current_page === $page);
-      $style  = $active
-        ? 'background:rgba(255,255,255,0.16);color:#fff;font-weight:600;'
-        : 'color:rgba(255,255,255,0.58);';
     ?>
     <a href="<?php echo $page; ?>"
        style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;font-size:13.5px;font-weight:500;text-decoration:none;transition:all 0.18s;margin-bottom:2px;position:relative;<?php echo $style; ?>"
