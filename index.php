@@ -118,49 +118,53 @@ if (isset($_SESSION['user_id'])) {
         <div class="text-center mb-5">
             <div class="fc-section-tag">Why Choose FlashCru</div>
             <h2 class="fc-section-title">Everything You Need for<br>Emergency Response</h2>
-            <p class="fc-section-sub mx-auto">From instant reporting to team dispatch and real-time tracking — all in one seamless platform.</p>
+            <p class="fc-section-sub mx-auto">From instant alerts to rapid team deployment and real-time location updates FLASH CRU keeps your response fast, coordinated, and always in control.</p>
         </div>
         <div class="row g-4">
+            <!-- Features 1 -->
             <div class="col-md-4">
                 <div class="fc-feat-card">
                     <div class="fc-feat-icon red"><i class="bi bi-exclamation-triangle-fill"></i></div>
-                    <h5>Instant Incident Reporting</h5>
-                    <p>Community members can report emergencies in seconds with location, type, and full description.</p>
+                    <h5>Incident Reporting System</h5>
+                    <p>Users can quickly submit emergency reports with complete location and incident details.</p>
                 </div>
             </div>
+            <!-- Features 2 -->
             <div class="col-md-4">
                 <div class="fc-feat-card">
                     <div class="fc-feat-icon grn"><i class="bi bi-people-fill"></i></div>
-                    <h5>Smart Team Assignment</h5>
-                    <p>Admins assign the right response team instantly with role-based coordination and task tracking.</p>
+                    <h5>Smart Location Assignment</h5>
+                    <p>Incidents are assigned to the nearest available emergency team based on location.</p>
                 </div>
             </div>
+            <!-- Features 3 -->
             <div class="col-md-4">
                 <div class="fc-feat-card">
                     <div class="fc-feat-icon blu"><i class="bi bi-graph-up-arrow"></i></div>
-                    <h5>Live Status Dashboard</h5>
-                    <p>Real-time dashboards give full visibility into active incidents, team deployment, and resolution.</p>
+                    <h5>Team Management</h5>
+                    <p>Admins manage emergency teams, members, and their availability status.</p>
                 </div>
             </div>
+            <!-- Features 4 -->
             <div class="col-md-4">
                 <div class="fc-feat-card">
                     <div class="fc-feat-icon red"><i class="bi bi-shield-lock-fill"></i></div>
-                    <h5>Role-Based Access</h5>
-                    <p>Secure login for users and admins with separate views and permissions built for safety operations.</p>
+                    <h5>Incident Dashboard</h5>
+                    <p>Admins can monitor, update, and track all reported incidents in real time.</p>
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="fc-feat-card">
                     <div class="fc-feat-icon grn"><i class="bi bi-journal-check"></i></div>
-                    <h5>Full Activity Logging</h5>
-                    <p>Every action is logged with timestamps for accountability, audit trails, and performance review.</p>
+                    <h5>Role-Based Access</h5>
+                    <p>Separate access for Users and Admins ensures secure system control.</p>
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="fc-feat-card">
                     <div class="fc-feat-icon blu"><i class="bi bi-geo-alt-fill"></i></div>
-                    <h5>Barangay-Level Coverage</h5>
-                    <p>Organized by barangay for precise local response coordination and resource deployment.</p>
+                    <h5>Activity Log</h5>
+                    <p>All system actions are recorded for monitoring and accountability.</p>
                 </div>
             </div>
         </div>
@@ -174,25 +178,28 @@ if (isset($_SESSION['user_id'])) {
         <h2 class="fc-section-title">How FlashCru Works</h2>
     </div>
     <div class="row g-4 justify-content-center">
+        <!-- Works 1     -->
         <div class="col-md-3"><div class="fc-step">
             <div class="fc-step-num">1</div>
-            <h5>Register &amp; Log In</h5>
-            <p>Create a community account and access your personalized emergency dashboard.</p>
+            <h5>Report an Incident</h5>
+            <p>Submit incidents with details and location.</p>
         </div></div>
+        <!-- Works 2 -->
         <div class="col-md-3"><div class="fc-step">
             <div class="fc-step-num">2</div>
-            <h5>Report an Incident</h5>
-            <p>Submit a report with your location, type of emergency, and key details.</p>
+            <h5>Manual Location Updates</h5>
+            <p>Reporter locations are manually recorded.</p>
         </div></div>
+        <!-- Works 3 -->
         <div class="col-md-3"><div class="fc-step">
             <div class="fc-step-num">3</div>
-            <h5>Team Gets Dispatched</h5>
-            <p>Admins review and assign a qualified response team to your location.</p>
+            <h5>Team Dispatch</h5>
+            <p>Notify and send teams quickly.</p>
         </div></div>
         <div class="col-md-3"><div class="fc-step">
             <div class="fc-step-num">4</div>
-            <h5>Track &amp; Resolve</h5>
-            <p>Follow the real-time status of your report until full resolution.</p>
+            <h5>Status & Feedback</h5>
+            <p>Update incident status for real-time visibility.</p>
         </div></div>
     </div>
 </section>
