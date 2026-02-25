@@ -1,75 +1,84 @@
 <?php
-/**
- * FlashCru — Shared Sidebar v4.0
- * Collapsible, modern civic-tech style
- */
-$current_page = basename($_SERVER['PHP_SELF']);
-
-$nav_sections = [
-  'Main' => [
-    ['dashboard.php',       '&#8962;', 'Dashboard',       null],
-    ['incidents.php',       '&#9888;', 'Incidents',        null],
-    ['teams.php',           '&#128101;', 'Teams',          null],
-  ],
-  'Reports' => [
-    ['report_incident.php', '&#128203;', 'Report Incident', null],
-    ['my_reports.php',      '&#128196;', 'My Reports',      null],
-    ['reports.php',         '&#128200;', 'Analytics',       null],
-  ],
-  'System' => [
-    ['settings.php',        '&#9881;', 'Settings',         null],
-  ],
-];
+if (session_status() === PHP_SESSION_NONE) session_start();
+$depth   = substr_count($_SERVER['PHP_SELF'], '/') - 2;
+$base    = str_repeat('../', max(0, $depth));
+$role    = $_SESSION['role']   ?? 'user';
+$uname   = $_SESSION['name']   ?? 'User';
+$current = basename($_SERVER['PHP_SELF']);
+$folder  = basename(dirname($_SERVER['PHP_SELF']));
 ?>
-<aside class="sidebar" id="fcSidebar">
-  <div class="sidebar-bg-accent"></div>
-
-  <!-- Toggle btn -->
-  <button class="sidebar-toggle" id="sidebarToggle" title="Toggle sidebar">‹</button>
-
-  <!-- Logo -->
-  <div class="sidebar-logo">
-    <div class="sidebar-logo-icon">⚡</div>
-    <div class="sidebar-logo-text">
-      <div class="logo-name">FlashCru</div>
-      <div class="logo-sub">Emergency Response</div>
+<!-- SIDEBAR -->
+<aside class="fc-sidebar" id="fcSidebar">
+    <!-- Brand -->
+    <div class="fc-sidebar-brand">
+        <div class="fc-brand-icon">
+            <i class="bi bi-lightning-charge-fill"></i>
+        </div>
+        <div>
+            <div class="fc-brand-name">FlashCru</div>
+            <div class="fc-brand-sub">Response System</div>
+        </div>
     </div>
-  </div>
 
-  <!-- Nav -->
-  <nav class="sidebar-nav">
-    <?php foreach ($nav_sections as $section => $items): ?>
-    <div class="nav-section-label"><?php echo $section; ?></div>
-    <?php foreach ($items as [$page, $icon, $label, $badge]):
-      $active = ($current_page === $page);
-    ?>
-    <a href="<?php echo $page; ?>"
-       class="nav-item<?php echo $active ? ' active' : ''; ?>"
-       title="<?php echo htmlspecialchars($label); ?>">
-      <span class="nav-icon"><?php echo $icon; ?></span>
-      <span class="nav-label"><?php echo htmlspecialchars($label); ?></span>
-      <?php if ($badge): ?>
-      <span class="nav-badge"><?php echo $badge; ?></span>
-      <?php endif; ?>
-    </a>
-    <?php endforeach; ?>
-    <?php endforeach; ?>
-  </nav>
+    <!-- Nav -->
+    <nav class="fc-sidebar-nav">
 
-  <!-- User + Logout -->
-  <div class="sidebar-user">
-    <div class="sidebar-user-row">
-      <div class="user-avatar">
-        <?php echo strtoupper(substr($_SESSION['username'] ?? 'SA', 0, 2)); ?>
-      </div>
-      <div class="sidebar-user-text">
-        <div class="user-name"><?php echo htmlspecialchars($_SESSION['full_name'] ?? 'System Admin'); ?></div>
-        <div class="user-role"><?php echo ucfirst($_SESSION['role'] ?? 'Administrator'); ?></div>
-      </div>
+        <?php if ($role === 'admin'): ?>
+        <!-- ADMIN NAV -->
+        <div class="fc-nav-label">MAIN</div>
+        <a href="<?= $base ?>admin/dashboard.php"
+           class="fc-nav-item <?= ($current === 'dashboard.php' && $folder === 'admin') ? 'active' : '' ?>">
+            <i class="bi bi-grid-1x2-fill"></i> Dashboard
+        </a>
+
+        <div class="fc-nav-label">MANAGEMENT</div>
+        <a href="<?= $base ?>admin/manage_reports.php"
+           class="fc-nav-item <?= $current === 'manage_reports.php' ? 'active' : '' ?>">
+            <i class="bi bi-file-earmark-text-fill"></i> Incident Reports
+        </a>
+        <a href="<?= $base ?>admin/manage_teams.php"
+           class="fc-nav-item <?= $current === 'manage_teams.php' ? 'active' : '' ?>">
+            <i class="bi bi-people-fill"></i> Response Teams
+        </a>
+        <a href="<?= $base ?>admin/manage_incident_types.php"
+           class="fc-nav-item <?= $current === 'manage_incident_types.php' ? 'active' : '' ?>">
+            <i class="bi bi-tags-fill"></i> Incident Types
+        </a>
+
+        <?php else: ?>
+        <!-- USER NAV -->
+        <div class="fc-nav-label">MAIN</div>
+        <a href="<?= $base ?>user/dashboard.php"
+           class="fc-nav-item <?= ($current === 'dashboard.php' && $folder === 'user') ? 'active' : '' ?>">
+            <i class="bi bi-grid-1x2-fill"></i> Dashboard
+        </a>
+
+        <div class="fc-nav-label">REPORTS</div>
+        <a href="<?= $base ?>user/report_incident.php"
+           class="fc-nav-item <?= $current === 'report_incident.php' ? 'active' : '' ?>">
+            <i class="bi bi-exclamation-triangle-fill"></i> Report Incident
+        </a>
+        <a href="<?= $base ?>user/my_reports.php"
+           class="fc-nav-item <?= $current === 'my_reports.php' ? 'active' : '' ?>">
+            <i class="bi bi-clock-history"></i> My Reports
+        </a>
+        <?php endif; ?>
+
+        <div class="fc-nav-label">ACCOUNT</div>
+        <a href="<?= $base ?>logout.php" class="fc-nav-item fc-nav-danger">
+            <i class="bi bi-box-arrow-left"></i> Logout
+        </a>
+    </nav>
+
+    <!-- Sidebar footer: current user -->
+    <div class="fc-sidebar-user">
+        <div class="fc-user-avatar"><?= strtoupper(substr($uname, 0, 1)) ?></div>
+        <div class="fc-user-info">
+            <div class="fc-user-name"><?= htmlspecialchars($uname) ?></div>
+            <div class="fc-user-role"><?= ucfirst($role) ?></div>
+        </div>
     </div>
-    <a href="logout.php" class="logout-btn" title="Log Out">
-      <span class="nav-icon">🚪</span>
-      <span class="nav-label">Log Out</span>
-    </a>
-  </div>
-  </aside>
+</aside>
+
+<!-- Mobile overlay -->
+<div class="fc-overlay" id="fcOverlay" onclick="fcCloseSidebar()"></div>
