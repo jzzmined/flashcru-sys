@@ -7,14 +7,14 @@ $total      = totalIncidents();
 $pending    = countByStatus('pending');
 // Query using the correct column 'status_id'
 $active_res = $conn->query("SELECT COUNT(*) AS c FROM incidents WHERE status_id IN (2, 3)");
-$active = ($active_res) ? (int)$active_res->fetch_assoc()['c'] : 0;$active = 0; // Default if query fails
+$active = ($active_res) ? (int)$active_res->fetch_assoc()['c'] : 0;
 $resolved   = countByStatus('resolved');
 $users      = totalUsers();
 $teams      = totalTeams();
 
 $recent = $conn->query("
     SELECT i.*, it.name AS type_name, b.name AS barangay,
-           u.name AS reporter, t.name AS team_name
+           u.full_name AS reporter, t.name AS team_name
     FROM incidents i
     LEFT JOIN incident_types it ON i.incident_type_id = it.id
     LEFT JOIN barangays       b  ON i.barangay_id     = b.id
@@ -23,6 +23,10 @@ $recent = $conn->query("
     ORDER BY i.created_at DESC
     LIMIT 8
 ");
+
+if (!$recent) {
+    die("Recent incidents query failed: " . $conn->error);
+}
 
 $log = $conn->query("
     SELECT al.*, u.name AS uname
@@ -157,7 +161,7 @@ $log = $conn->query("
                                 Manage All
                             </a>
                         </div>
-                        <?php if ($recent->num_rows === 0): ?>
+                        <?php if (!$recent || $recent->num_rows === 0): ?>
                         <div class="fc-empty"><i class="bi bi-inbox"></i><h6>No Incidents Yet</h6></div>
                         <?php else: ?>
                         <div class="table-responsive">
