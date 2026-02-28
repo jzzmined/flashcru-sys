@@ -54,7 +54,7 @@ if (isset($_GET['delete'])) {
 }
 
 $teams = $conn->query("
-    SELECT t.*, COUNT(tm.id) AS member_count
+    SELECT t.*, COUNT(tm.team_mem_id) AS member_count
     FROM teams t
     LEFT JOIN team_members tm ON t.team_id = tm.team_id
     GROUP BY t.team_id
@@ -76,16 +76,7 @@ if (!$teams) die("Teams query failed: " . $conn->error);
                     <div class="fc-breadcrumb">Admin / Manage Teams</div>
                 </div>
             </div>
-            <div class="fc-topbar-right">
-                <div class="fc-notif-btn"><i class="bi bi-bell"></i></div>
-                <div class="fc-tb-user">
-                    <div class="fc-user-avatar" style="background:var(--fc-dark);"><?= strtoupper(substr($_SESSION['name'],0,1)) ?></div>
-                    <div>
-                        <div class="fc-tb-name"><?= htmlspecialchars($_SESSION['name']) ?></div>
-                        <div class="fc-tb-role">Admin</div>
-                    </div>
-                </div>
-            </div>
+            <div class="fc-topbar-right"></div>
         </div>
 
         <div class="fc-content">

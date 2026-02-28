@@ -63,16 +63,7 @@ if ($teams_res) while ($t = $teams_res->fetch_assoc()) $teams_arr[] = $t;
                     <div class="fc-breadcrumb">Admin / Incident Reports</div>
                 </div>
             </div>
-            <div class="fc-topbar-right">
-                <div class="fc-notif-btn"><i class="bi bi-bell"></i></div>
-                <div class="fc-tb-user">
-                    <div class="fc-user-avatar" style="background:var(--fc-dark);"><?= strtoupper(substr($_SESSION['name'],0,1)) ?></div>
-                    <div>
-                        <div class="fc-tb-name"><?= htmlspecialchars($_SESSION['name']) ?></div>
-                        <div class="fc-tb-role">Admin</div>
-                    </div>
-                </div>
-            </div>
+            <div class="fc-topbar-right"></div>
         </div>
 
         <div class="fc-content">

@@ -13,8 +13,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_type'])) {
     if (!$name) {
         $err = 'Type name is required.';
     } else {
-        $stmt = $conn->prepare("INSERT INTO incident_types (name, description, created_at) VALUES (?, ?, NOW())");
-        $stmt->bind_param("ss", $name, $desc);
+        $stmt = $conn->prepare("INSERT INTO incident_types (name) VALUES (?)");
+        $stmt->bind_param("s", $name);
         if ($stmt->execute()) {
             $msg = "Incident type \"$name\" added.";
         } else {
@@ -28,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_id'])) {
     $id   = (int)$_POST['edit_id'];
     $name = sanitize($_POST['edit_name'] ?? '');
     $desc = sanitize($_POST['edit_desc'] ?? '');
-    $conn->query("UPDATE incident_types SET name='$name', description='$desc' WHERE id=$id");
+    $conn->query("UPDATE incident_types SET name='$name' WHERE id=$id");
     $msg = "Incident type updated.";
 }
 
@@ -66,16 +66,7 @@ $types = $conn->query("
                     <div class="fc-breadcrumb">Admin / Manage Incident Types</div>
                 </div>
             </div>
-            <div class="fc-topbar-right">
-                <div class="fc-notif-btn"><i class="bi bi-bell"></i></div>
-                <div class="fc-tb-user">
-                    <div class="fc-user-avatar" style="background:var(--fc-dark);"><?= strtoupper(substr($_SESSION['name'],0,1)) ?></div>
-                    <div>
-                        <div class="fc-tb-name"><?= htmlspecialchars($_SESSION['name']) ?></div>
-                        <div class="fc-tb-role">Admin</div>
-                    </div>
-                </div>
-            </div>
+            <div class="fc-topbar-right"></div>
         </div>
 
         <div class="fc-content">
@@ -137,7 +128,7 @@ $types = $conn->query("
                                             </span>
                                         </td>
                                         <td style="color:var(--fc-muted);max-width:220px;font-size:12.5px;">
-                                            <?= htmlspecialchars($it['description'] ?: '—') ?>
+                                            <?= htmlspecialchars($it['description'] ?? '—') ?>
                                         </td>
                                         <td>
                                             <span style="background:#eef2ff;color:#5b7cf7;padding:3px 10px;border-radius:100px;font-size:11.5px;font-weight:600;">
@@ -145,7 +136,7 @@ $types = $conn->query("
                                             </span>
                                         </td>
                                         <td style="color:var(--fc-muted);font-size:12px;white-space:nowrap;">
-                                            <?= date('M d, Y', strtotime($it['created_at'])) ?>
+                                            <?= $it['created_at'] ? date('M d, Y', strtotime($it['created_at'])) : '—' ?>
                                         </td>
                                         <td style="display:flex;gap:6px;">
                                             <!-- Edit -->
@@ -187,7 +178,7 @@ $types = $conn->query("
                                                         </div>
                                                         <div class="mb-2">
                                                             <label class="fc-form-label">Description</label>
-                                                            <textarea name="edit_desc" class="fc-form-control" rows="3"><?= htmlspecialchars($it['description']) ?></textarea>
+                                                            <textarea name="edit_desc" class="fc-form-control" rows="3"><?= htmlspecialchars($it['description'] ?? '') ?></textarea>
                                                         </div>
                                                     </div>
                                                     <div class="modal-footer">

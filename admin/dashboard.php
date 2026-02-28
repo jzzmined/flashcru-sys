@@ -52,21 +52,7 @@ if (!$log) die("Log query failed: " . $conn->error);
                     <div class="fc-breadcrumb">FlashCru / Control Center</div>
                 </div>
             </div>
-            <div class="fc-topbar-right">
-                <div class="fc-notif-btn">
-                    <i class="bi bi-bell"></i>
-                    <?php if ($pending > 0): ?><span class="fc-notif-dot"></span><?php endif; ?>
-                </div>
-                <div class="fc-tb-user">
-                    <div class="fc-user-avatar" style="background:var(--fc-dark);">
-                        <?= strtoupper(substr($_SESSION['name'],0,1)) ?>
-                    </div>
-                    <div>
-                        <div class="fc-tb-name"><?= htmlspecialchars($_SESSION['name']) ?></div>
-                        <div class="fc-tb-role">System Admin</div>
-                    </div>
-                </div>
-            </div>
+            <div class="fc-topbar-right"></div>
         </div>
 
         <div class="fc-content">
