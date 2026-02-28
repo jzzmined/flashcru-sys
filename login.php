@@ -12,7 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email    = sanitize($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
 
-    $stmt = $conn->prepare("SELECT id, name, email, password, role FROM users WHERE email = ? AND role = 'user'");
+    $stmt = $conn->prepare("SELECT user_id, full_name, email, password, role FROM users WHERE email = ? AND status = 'active'");
     $stmt->bind_param("s", $email);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -20,11 +20,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($result->num_rows === 1) {
         $user = $result->fetch_assoc();
         if (password_verify($password, $user['password'])) {
-            $_SESSION['user_id'] = $user['id'];
-            $_SESSION['name']    = $user['name'];
+            $_SESSION['user_id'] = $user['user_id'];
+            $_SESSION['name']    = $user['full_name'];
             $_SESSION['email']   = $user['email'];
             $_SESSION['role']    = 'user';
-            logActivity($user['id'], 'User logged in');
+            logActivity($user['user_id'], 'User logged in');
             redirect('user/dashboard.php');
         } else {
             $error = 'Incorrect password. Please try again.';

@@ -9,7 +9,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name       = sanitize($_POST['name']        ?? '');
     $email      = sanitize($_POST['email']       ?? '');
     $phone      = sanitize($_POST['phone']       ?? '');
-    $bar_id     = (int)($_POST['barangay_id']    ?? 0);
+    // $bar_id     = (int)($_POST['barangay_id']    ?? 0);
     $password   = $_POST['password']             ?? '';
     $confirm    = $_POST['confirm']              ?? '';
 
@@ -20,15 +20,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (strlen($password) < 6) {
         $error = 'Password must be at least 6 characters.';
     } else {
-        $chk = $conn->prepare("SELECT id FROM users WHERE email = ?");
+        $chk = $conn->prepare("SELECT user_id FROM users WHERE email = ?");
         $chk->bind_param("s", $email);
         $chk->execute();
         if ($chk->get_result()->num_rows > 0) {
             $error = 'That email is already registered.';
         } else {
             $hash = password_hash($password, PASSWORD_DEFAULT);
-            $ins  = $conn->prepare("INSERT INTO users (name,email,phone,barangay_id,password,role,created_at) VALUES(?,?,?,?,?,'user',NOW())");
-            $ins->bind_param("sssss", $name, $email, $phone, $bar_id, $hash);
+           $ins  = $conn->prepare("INSERT INTO users (full_name,email,contact_number,password,role,status,created_at) VALUES(?,?,?,?,'user','active',NOW())");
+           $ins->bind_param("ssss", $name, $email, $phone, $hash);
             if ($ins->execute()) {
                 $success = 'Account created! You can now <a href="login.php">sign in</a>.';
             } else {
@@ -93,7 +93,7 @@ $barangays = $conn->query("SELECT id, name FROM barangays ORDER BY name");
                            placeholder="09XXXXXXXXX"
                            value="<?= htmlspecialchars($_POST['phone'] ?? '') ?>">
                 </div>
-                <div class="col-12">
+                <!-- <div class="col-12">
                     <label class="fc-form-label">Barangay</label>
                     <select name="barangay_id" class="fc-form-control">
                         <option value="">Select your barangay</option>
@@ -104,7 +104,7 @@ $barangays = $conn->query("SELECT id, name FROM barangays ORDER BY name");
                         </option>
                         <?php endwhile; ?>
                     </select>
-                </div>
+                </div> -->
                 <div class="col-md-6">
                     <label class="fc-form-label">Password <span style="color:var(--fc-primary)">*</span></label>
                     <input type="password" name="password" class="fc-form-control"
