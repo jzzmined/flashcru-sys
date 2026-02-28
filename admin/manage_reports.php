@@ -5,37 +5,49 @@ require_once '../includes/functions.php';
 
 $msg = '';
 
+$statusMap = [
+    'pending'    => 1,
+    'assigned'   => 2,
+    'responding' => 3,
+    'resolved'   => 4,
+    'cancelled'  => 5
+];
+$statusByID = array_flip($statusMap);
+
 // Handle status + team update
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_id'])) {
-    $id      = (int)$_POST['update_id'];
-    $status  = sanitize($_POST['status']);
-    $team_id = !empty($_POST['team_id']) ? (int)$_POST['team_id'] : null;
-    $t_sql   = $team_id ? $team_id : 'NULL';
+    $id        = (int)$_POST['update_id'];
+    $status    = sanitize($_POST['status']);
+    $team_id   = !empty($_POST['team_id']) ? (int)$_POST['team_id'] : null;
+    $t_sql     = $team_id ? $team_id : 'NULL';
+    $status_id = $statusMap[$status] ?? 1;
 
-    $conn->query("UPDATE incidents SET status='$status', team_id=$t_sql, updated_at=NOW() WHERE id=$id");
+    $conn->query("UPDATE incidents SET status_id=$status_id, assigned_team_id=$t_sql, updated_at=NOW() WHERE id=$id");
     logActivity($_SESSION['user_id'], "Updated incident #$id → status: $status");
     $msg = "Incident #$id updated successfully.";
 }
 
-$filter  = isset($_GET['status']) ? sanitize($_GET['status']) : '';
-$where   = $filter ? "WHERE i.status = '$filter'" : '';
+$filter = isset($_GET['status']) ? sanitize($_GET['status']) : '';
+$where  = ($filter && isset($statusMap[$filter])) ? "WHERE i.status_id = " . $statusMap[$filter] : '';
 
 $reports = $conn->query("
     SELECT i.*, it.name AS type_name, b.name AS barangay,
-           u.name AS reporter, u.phone AS reporter_phone,
-           t.name AS team_name
+           u.full_name AS reporter, u.contact_number AS reporter_phone,
+           t.team_name AS team_name
     FROM incidents i
     LEFT JOIN incident_types it ON i.incident_type_id = it.id
     LEFT JOIN barangays       b  ON i.barangay_id     = b.id
-    LEFT JOIN users           u  ON i.user_id         = u.id
-    LEFT JOIN teams           t  ON i.team_id         = t.id
+    LEFT JOIN users           u  ON i.user_id         = u.user_id
+    LEFT JOIN teams           t  ON i.assigned_team_id = t.team_id
     $where
     ORDER BY i.created_at DESC
 ");
+if (!$reports) die("Reports query failed: " . $conn->error);
 
-$teams_res  = $conn->query("SELECT id, name FROM teams WHERE status='active' ORDER BY name");
-$teams_arr  = [];
-while ($t = $teams_res->fetch_assoc()) $teams_arr[] = $t;
+$teams_res = $conn->query("SELECT team_id AS id, team_name AS name FROM teams WHERE status='active' ORDER BY team_name");
+$teams_arr = [];
+if ($teams_res) while ($t = $teams_res->fetch_assoc()) $teams_arr[] = $t;
+
 ?>
 <?php include '../includes/header.php'; ?>
 
@@ -113,7 +125,7 @@ while ($t = $teams_res->fetch_assoc()) $teams_arr[] = $t;
                                     <span style="color:var(--fc-muted);font-size:12px;">Unassigned</span>
                                     <?php endif; ?>
                                 </td>
-                                <td><?= getStatusBadge($r['status']) ?></td>
+                                <td><?= getStatusBadge($statusByID[$r['status_id']] ?? 'pending') ?></td>
                                 <td style="color:var(--fc-muted);font-size:12px;white-space:nowrap;">
                                     <?= date('M d, Y', strtotime($r['created_at'])) ?>
                                 </td>
@@ -184,7 +196,7 @@ while ($t = $teams_res->fetch_assoc()) $teams_arr[] = $t;
                                                     <label class="fc-form-label">Update Status</label>
                                                     <select name="status" class="fc-form-control">
                                                         <?php foreach (['pending','assigned','responding','resolved','cancelled'] as $s): ?>
-                                                        <option value="<?= $s ?>" <?= $r['status'] === $s ? 'selected' : '' ?>>
+                                                        <option value="<?= $s ?>" <?= ($statusMap[$s] ?? 0) === (int)$r['status_id'] ? 'selected' : '' ?>></option>
                                                             <?= ucfirst($s) ?>
                                                         </option>
                                                         <?php endforeach; ?>

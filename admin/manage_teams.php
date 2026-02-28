@@ -14,7 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_team'])) {
     if (!$name || !$type) {
         $err = 'Team name and type are required.';
     } else {
-        $stmt = $conn->prepare("INSERT INTO teams (name, type, team_lead, status, created_at) VALUES (?, ?, ?, 'active', NOW())");
+        $stmt = $conn->prepare("INSERT INTO teams (team_name, team_type, team_lead, status, created_at) VALUES (?, ?, ?, 'active', NOW())");
         $stmt->bind_param("sss", $name, $type, $lead);
         if ($stmt->execute()) {
             $tid = $conn->insert_id;
@@ -40,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_team'])) {
 // Toggle status
 if (isset($_GET['toggle'])) {
     $id = (int)$_GET['toggle'];
-    $conn->query("UPDATE teams SET status = IF(status='active','inactive','active') WHERE id=$id");
+    $conn->query("UPDATE teams SET status = IF(status='active','inactive','active') WHERE team_id=$id");
     $msg = 'Team status updated.';
 }
 
@@ -48,7 +48,7 @@ if (isset($_GET['toggle'])) {
 if (isset($_GET['delete'])) {
     $id = (int)$_GET['delete'];
     $conn->query("DELETE FROM team_members WHERE team_id=$id");
-    $conn->query("DELETE FROM teams WHERE id=$id");
+    $conn->query("DELETE FROM teams WHERE team_id=$id");
     logActivity($_SESSION['user_id'], "Deleted team #$id");
     $msg = 'Team deleted.';
 }
@@ -56,10 +56,11 @@ if (isset($_GET['delete'])) {
 $teams = $conn->query("
     SELECT t.*, COUNT(tm.id) AS member_count
     FROM teams t
-    LEFT JOIN team_members tm ON t.id = tm.team_id
-    GROUP BY t.id
+    LEFT JOIN team_members tm ON t.team_id = tm.team_id
+    GROUP BY t.team_id
     ORDER BY t.created_at DESC
 ");
+if (!$teams) die("Teams query failed: " . $conn->error);
 ?>
 <?php include '../includes/header.php'; ?>
 
@@ -158,8 +159,8 @@ $teams = $conn->query("
                                 <tbody>
                                     <?php while ($t = $teams->fetch_assoc()): ?>
                                     <tr>
-                                        <td><strong><?= htmlspecialchars($t['name']) ?></strong></td>
-                                        <td><span class="fc-pill"><?= htmlspecialchars($t['type']) ?></span></td>
+                                        <td><strong><?= htmlspecialchars($t['team_name']) ?></strong></td>
+                                        <td><span class="fc-pill"><?= htmlspecialchars($t['team_type']) ?></span></td>
                                         <td><?= htmlspecialchars($t['team_lead'] ?: '—') ?></td>
                                         <td>
                                             <span style="background:#eef2ff;color:#5b7cf7;padding:3px 10px;border-radius:100px;font-size:11.5px;font-weight:600;">
@@ -173,10 +174,10 @@ $teams = $conn->query("
                                             </span>
                                         </td>
                                         <td style="display:flex;gap:6px;">
-                                            <a href="?toggle=<?= $t['id'] ?>" class="fc-icon-btn" title="Toggle Status">
+                                            <a href="?toggle=<?= $t['team_id'] ?>" class="fc-icon-btn" title="Toggle Status">
                                                 <i class="bi bi-toggle-on"></i>
                                             </a>
-                                            <a href="?delete=<?= $t['id'] ?>" class="fc-icon-btn del"
+                                            <a href="?delete=<?= $t['team_id'] ?>" class="fc-icon-btn del"
                                                onclick="return fcConfirm('Delete this team and all its members?')"
                                                title="Delete">
                                                 <i class="bi bi-trash-fill"></i>

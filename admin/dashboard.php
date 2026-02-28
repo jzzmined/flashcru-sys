@@ -14,12 +14,12 @@ $teams      = totalTeams();
 
 $recent = $conn->query("
     SELECT i.*, it.name AS type_name, b.name AS barangay,
-           u.full_name AS reporter, t.name AS team_name
+           u.full_name AS reporter, t.team_name AS team_name
     FROM incidents i
     LEFT JOIN incident_types it ON i.incident_type_id = it.id
     LEFT JOIN barangays       b  ON i.barangay_id     = b.id
-    LEFT JOIN users           u  ON i.user_id         = u.id
-    LEFT JOIN teams           t  ON i.team_id         = t.id
+    LEFT JOIN users           u  ON i.user_id         = u.user_id
+    LEFT JOIN teams           t  ON i.assigned_team_id         = t.team_id
     ORDER BY i.created_at DESC
     LIMIT 8
 ");
@@ -29,12 +29,13 @@ if (!$recent) {
 }
 
 $log = $conn->query("
-    SELECT al.*, u.name AS uname
+    SELECT al.*, u.full_name AS uname
     FROM activity_log al
-    LEFT JOIN users u ON al.user_id = u.id
+    LEFT JOIN users u ON al.user_id = u.user_id
     ORDER BY al.created_at DESC
     LIMIT 10
 ");
+if (!$log) die("Log query failed: " . $conn->error);
 ?>
 <?php include '../includes/header.php'; ?>
 
