@@ -46,7 +46,7 @@ if (!$log) die("Log query failed: " . $conn->error);
         <!-- TOPBAR -->
         <div class="fc-topbar">
             <div class="fc-topbar-left">
-                <button class="fc-menu-btn" onclick="fcOpenSidebar()"><i class="bi bi-list"></i></button>
+                <button class="fc-menu-btn" onclick="fcToggleSidebar()" style="display:block;"><i class="bi bi-list"></i></button>
                 <div>
                     <div class="fc-page-title">Admin Dashboard</div>
                     <div class="fc-breadcrumb">FlashCru / Control Center</div>
@@ -68,14 +68,14 @@ if (!$log) die("Log query failed: " . $conn->error);
                         <?= date('l, F j, Y \a\t g:i A') ?>
                     </div>
                 </div>
-                <div style="display:flex;gap:10px;flex-wrap:wrap;position:relative;z-index:1;">
+                <!-- <div style="display:flex;gap:10px;flex-wrap:wrap;position:relative;z-index:1;">
                     <a href="manage_reports.php" class="fc-btn fc-btn-primary" style="font-size:13px;padding:10px 20px;">
                         <i class="bi bi-file-earmark-text-fill"></i> View Reports
                     </a>
                     <a href="manage_teams.php" class="fc-btn fc-btn-outline" style="font-size:13px;padding:10px 20px;">
                         <i class="bi bi-people-fill"></i> Teams
                     </a>
-                </div>
+                </div> -->
             </div>
 
             <!-- Stat cards row 1 -->
@@ -144,10 +144,8 @@ if (!$log) die("Log query failed: " . $conn->error);
                             <div class="fc-card-title">
                                 <i class="bi bi-clock-history" style="color:var(--fc-primary)"></i> Latest Incidents
                             </div>
-                            <a href="manage_reports.php" class="fc-btn fc-btn-primary" style="font-size:12px;padding:6px 14px;">
-                                Manage All
-                            </a>
                         </div>
+                        
                         <?php if (!$recent || $recent->num_rows === 0): ?>
                         <div class="fc-empty"><i class="bi bi-inbox"></i><h6>No Incidents Yet</h6></div>
                         <?php else: ?>
@@ -190,7 +188,7 @@ if (!$log) die("Log query failed: " . $conn->error);
                                 <i class="bi bi-activity" style="color:var(--fc-success)"></i> Activity Log
                             </div>
                         </div>
-                        <div>
+                        <div class="fc-log-scroll">
                             <?php while ($l = $log->fetch_assoc()): ?>
                             <div class="fc-log-item">
                                 <div class="fc-log-dot"></div>

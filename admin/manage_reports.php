@@ -57,7 +57,7 @@ if ($teams_res) while ($t = $teams_res->fetch_assoc()) $teams_arr[] = $t;
     <div class="fc-main">
         <div class="fc-topbar">
             <div class="fc-topbar-left">
-                <button class="fc-menu-btn" onclick="fcOpenSidebar()"><i class="bi bi-list"></i></button>
+                <button class="fc-menu-btn" onclick="fcToggleSidebar()" style="display:block;"><i class="bi bi-list"></i></button>
                 <div>
                     <div class="fc-page-title">Manage Reports</div>
                     <div class="fc-breadcrumb">Admin / Incident Reports</div>

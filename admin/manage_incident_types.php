@@ -60,7 +60,7 @@ $types = $conn->query("
     <div class="fc-main">
         <div class="fc-topbar">
             <div class="fc-topbar-left">
-                <button class="fc-menu-btn" onclick="fcOpenSidebar()"><i class="bi bi-list"></i></button>
+                <button class="fc-menu-btn" onclick="fcToggleSidebar()" style="display:block;"><i class="bi bi-list"></i></button>
                 <div>
                     <div class="fc-page-title">Incident Types</div>
                     <div class="fc-breadcrumb">Admin / Manage Incident Types</div>
@@ -110,7 +110,7 @@ $types = $conn->query("
                         <?php if ($types->num_rows === 0): ?>
                         <div class="fc-empty"><i class="bi bi-tags"></i><h6>No Types Yet</h6></div>
                         <?php else: ?>
-                        <div class="table-responsive">
+                        <div class="table-responsive" style="max-height: 480px; overflow-y: auto;">
                             <table class="fc-table">
                                 <thead>
                                     <tr>

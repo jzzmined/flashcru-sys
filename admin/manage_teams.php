@@ -4,6 +4,9 @@ require_once '../includes/db_connect.php';
 require_once '../includes/functions.php';
 
 $msg = $err = '';
+if (isset($_GET['msg']) && $_GET['msg'] === 'deleted') {
+    $msg = 'Team deleted.';
+}
 
 // Add team
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_team'])) {
@@ -14,8 +17,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_team'])) {
     if (!$name || !$type) {
         $err = 'Team name and type are required.';
     } else {
-        $stmt = $conn->prepare("INSERT INTO teams (team_name, team_type, team_lead, status, created_at) VALUES (?, ?, ?, 'active', NOW())");
-        $stmt->bind_param("sss", $name, $type, $lead);
+       $stmt = $conn->prepare("INSERT INTO teams (team_name, team_type, team_lead, status, created_at) VALUES (?, ?, ?, 'active', NOW())");
+       $stmt->bind_param("sss", $name, $type, $lead);
         if ($stmt->execute()) {
             $tid = $conn->insert_id;
             if (!empty($_POST['member_name'])) {
@@ -23,7 +26,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_team'])) {
                     $mn = trim($mn);
                     $mr = trim($_POST['member_role'][$i] ?? '');
                     if ($mn) {
-                        $ms = $conn->prepare("INSERT INTO team_members (team_id, name, role) VALUES (?, ?, ?)");
+                        $ms = $conn->prepare("INSERT INTO team_members (team_id, full_name, role) VALUES (?, ?, ?)");
+                        if (!$ms) { die("team_members prepare failed: " . $conn->error); }
                         $ms->bind_param("iss", $tid, $mn, $mr);
                         $ms->execute();
                     }
@@ -50,7 +54,8 @@ if (isset($_GET['delete'])) {
     $conn->query("DELETE FROM team_members WHERE team_id=$id");
     $conn->query("DELETE FROM teams WHERE team_id=$id");
     logActivity($_SESSION['user_id'], "Deleted team #$id");
-    $msg = 'Team deleted.';
+    header("Location: manage_teams.php?msg=deleted");
+    exit;
 }
 
 $teams = $conn->query("
@@ -70,7 +75,7 @@ if (!$teams) die("Teams query failed: " . $conn->error);
     <div class="fc-main">
         <div class="fc-topbar">
             <div class="fc-topbar-left">
-                <button class="fc-menu-btn" onclick="fcOpenSidebar()"><i class="bi bi-list"></i></button>
+                <button class="fc-menu-btn" onclick="fcToggleSidebar()" style="display:block;"><i class="bi bi-list"></i></button>
                 <div>
                     <div class="fc-page-title">Response Teams</div>
                     <div class="fc-breadcrumb">Admin / Manage Teams</div>
@@ -152,7 +157,7 @@ if (!$teams) die("Teams query failed: " . $conn->error);
                                     <tr>
                                         <td><strong><?= htmlspecialchars($t['team_name']) ?></strong></td>
                                         <td><span class="fc-pill"><?= htmlspecialchars($t['team_type']) ?></span></td>
-                                        <td><?= htmlspecialchars($t['team_lead'] ?: '—') ?></td>
+                                        <td><?= htmlspecialchars($t['team_lead'] ?? '—') ?></td>
                                         <td>
                                             <span style="background:#eef2ff;color:#5b7cf7;padding:3px 10px;border-radius:100px;font-size:11.5px;font-weight:600;">
                                                 <?= $t['member_count'] ?> member<?= $t['member_count'] != 1 ? 's' : '' ?>

@@ -11,6 +11,21 @@ function fcCloseSidebar() {
     document.getElementById('fcSidebar').classList.remove('open');
     document.getElementById('fcOverlay').classList.remove('open');
 }
+function fcToggleSidebar() {
+    const sidebar = document.getElementById('fcSidebar');
+    sidebar.classList.toggle('collapsed');
+    document.body.classList.toggle('sidebar-collapsed');
+    localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+}
+document.addEventListener('DOMContentLoaded', function () {
+    if (localStorage.getItem('sidebarCollapsed') === 'true') {
+        const sidebar = document.getElementById('fcSidebar');
+        if (sidebar) {
+            sidebar.classList.add('collapsed');
+            document.body.classList.add('sidebar-collapsed');
+        }
+    }
+});
 
 /* ── Auto-dismiss alerts ─────────────────────────────── */
 document.addEventListener('DOMContentLoaded', function () {
