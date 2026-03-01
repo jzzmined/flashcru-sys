@@ -9,11 +9,14 @@ $pending = (int)$conn->query("SELECT COUNT(*) c FROM incidents WHERE user_id=$ui
 $active  = (int)$conn->query("SELECT COUNT(*) c FROM incidents WHERE user_id=$uid AND status_id IN(2,3)")->fetch_assoc()['c'];
 $resolved= (int)$conn->query("SELECT COUNT(*) c FROM incidents WHERE user_id=$uid AND status_id=4")->fetch_assoc()['c'];
 
+// FIX: Added b.name AS barangay to the query so barangay column is available
 $recent  = $conn->query("
-    SELECT i.*, it.name AS type_name, t.team_name AS team_name
+    SELECT i.*, it.name AS type_name, t.team_name AS team_name,
+           b.name AS barangay
     FROM incidents i
     LEFT JOIN incident_types it ON i.incident_type_id = it.id
     LEFT JOIN teams           t  ON i.assigned_team_id = t.team_id
+    LEFT JOIN barangays       b  ON i.barangay_id = b.id
     WHERE i.user_id = $uid
     ORDER BY i.created_at DESC
     LIMIT 6
@@ -38,11 +41,11 @@ $firstname = explode(' ', $_SESSION['name'])[0];
                 </button>
                 <div>
                     <div class="fc-page-title">Dashboard</div>
-                    <div class="fc-breadcrumb">Home / Dashboard</div>
+                    <div class="fc-breadcrumb">User Dashboard</div>
                 </div>
             </div>
             <div class="fc-topbar-right">
-                <div class="fc-notif-btn">
+                <!-- <div class="fc-notif-btn">
                     <i class="bi bi-bell"></i>
                     <?php if ($pending > 0): ?><span class="fc-notif-dot"></span><?php endif; ?>
                 </div>
@@ -52,7 +55,7 @@ $firstname = explode(' ', $_SESSION['name'])[0];
                         <div class="fc-tb-name"><?= htmlspecialchars($_SESSION['name']) ?></div>
                         <div class="fc-tb-role">Community Member</div>
                     </div>
-                </div>
+                </div> -->
             </div>
         </div><!-- /topbar -->
 
@@ -62,9 +65,9 @@ $firstname = explode(' ', $_SESSION['name'])[0];
             <div class="fc-welcome">
                 <div class="fc-welcome-title"><?= $greeting ?>, <?= htmlspecialchars($firstname) ?>!</div>
                 <div class="fc-welcome-sub">Stay safe. Report incidents. Let FlashCru handle the rest.</div>
-                <a href="report_incident.php" class="fc-btn fc-btn-primary" style="font-size:13px;padding:10px 22px;">
+                <!-- <a href="report_incident.php" class="fc-btn fc-btn-primary" style="font-size:13px;padding:10px 22px;">
                     <i class="bi bi-plus-circle-fill"></i> Report Incident
-                </a>
+                </a> -->
             </div>
 
             <!-- Stats -->
@@ -137,7 +140,8 @@ $firstname = explode(' ', $_SESSION['name'])[0];
                                 <tr>
                                     <td><strong style="color:var(--fc-primary)">#<?= $r['id'] ?></strong></td>
                                     <td><span class="fc-pill"><i class="bi bi-tag-fill"></i><?= htmlspecialchars($r['type_name']) ?></span></td>
-                                    <td><?= htmlspecialchars($r['barangay']) ?></td>
+                                    <!-- FIX: barangay now comes from the JOIN -->
+                                    <td><?= htmlspecialchars($r['barangay'] ?? 'N/A') ?></td>
                                     <td>
                                         <?php if ($r['team_name']): ?>
                                             <span style="color:var(--fc-success);font-weight:500;"><?= htmlspecialchars($r['team_name']) ?></span>
@@ -145,7 +149,8 @@ $firstname = explode(' ', $_SESSION['name'])[0];
                                             <span style="color:var(--fc-muted);font-size:12px;">Unassigned</span>
                                         <?php endif; ?>
                                     </td>
-                                    <td><?= getStatusBadge($r['status']) ?></td>
+                                    <!-- FIX: pass status_id (int) instead of status (string) -->
+                                    <td><?= getStatusBadge($r['status_id'] ?? 1) ?></td>
                                     <td style="color:var(--fc-muted);font-size:12.5px;white-space:nowrap;">
                                         <?= date('M d, Y', strtotime($r['created_at'])) ?>
                                     </td>

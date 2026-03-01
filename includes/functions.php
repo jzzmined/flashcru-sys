@@ -47,7 +47,7 @@ function totalIncidents() {
 
 function totalUsers() {
     global $conn;
-    return $conn->query("SELECT COUNT(*) AS c FROM users WHERE role='user'")->fetch_assoc()['c'];
+    return (int)$conn->query("SELECT COUNT(*) c FROM users WHERE role='responder'")->fetch_assoc()['c'];
 }
 
 function totalTeams() {

@@ -11,6 +11,8 @@
   --fc-bg           : #F9FCFB;
   --fc-card-accent  : #B0EACD;
   --fc-success      : #21BF73;
+  --fc-danger       : #dc3545;
+  --fc-danger-lt    : #fff0f0;
   --fc-dark         : #1a1f36;
   --fc-text         : #3a3f5c;
   --fc-muted        : #8b92a9;
@@ -359,6 +361,17 @@ a { text-decoration: none; }
 }
 .fc-btn-dark:hover { background: #252b47; color: #fff; transform: translateY(-1px); }
 
+/* Danger button */
+.fc-btn-danger {
+  background: var(--fc-danger); color: #fff;
+}
+.fc-btn-danger:hover {
+  background: #b02a37;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(220,53,69,.35);
+  color: #fff;
+}
+
 /* Small action buttons */
 .fc-icon-btn {
   width: 32px; height: 32px;
@@ -370,6 +383,9 @@ a { text-decoration: none; }
 }
 .fc-icon-btn:hover         { background: var(--fc-primary); color: #fff; border-color: var(--fc-primary); }
 .fc-icon-btn.del:hover     { background: #dc3545; color: #fff; border-color: #dc3545; }
+
+/* Cancel icon button variant */
+.fc-icon-btn.cancel:hover  { background: var(--fc-danger); color: #fff; border-color: var(--fc-danger); }
 
 /* =====================================================
    AUTH PAGES (login / register)
@@ -454,7 +470,7 @@ textarea.fc-form-control { resize: vertical; min-height: 110px; }
   margin-bottom: 20px;
 }
 .fc-alert-success { background: #e8faf3; color: #1a9a5e; }
-.fc-alert-error   { background: #fff0f0; color: #c93030; }
+.fc-alert-error   { background: var(--fc-danger-lt); color: var(--fc-danger); }
 .fc-alert-info    { background: #eef2ff; color: #4b5fef; }
 
 /* =====================================================
@@ -568,7 +584,6 @@ body.sidebar-collapsed .fc-main {
   background: rgba(0,0,0,.52); z-index: 299;
 }
 
-/* ── Main content wrapper ──────────────────────────── */
 /* ── Main content wrapper ──────────────────────────── */
 .fc-main {
   margin-left: var(--fc-sidebar-w);

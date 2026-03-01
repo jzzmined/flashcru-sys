@@ -45,18 +45,18 @@ $barangays = $conn->query("SELECT id, name FROM barangays ORDER BY name");
                 <button class="fc-menu-btn" onclick="fcOpenSidebar()"><i class="bi bi-list"></i></button>
                 <div>
                     <div class="fc-page-title">Report Incident</div>
-                    <div class="fc-breadcrumb">Dashboard / Report Incident</div>
+                    <div class="fc-breadcrumb">Reporting Incident</div>
                 </div>
             </div>
             <div class="fc-topbar-right">
-                <div class="fc-notif-btn"><i class="bi bi-bell"></i></div>
+                <!-- <div class="fc-notif-btn"><i class="bi bi-bell"></i></div>
                 <div class="fc-tb-user">
                     <div class="fc-user-avatar"><?= strtoupper(substr($_SESSION['name'],0,1)) ?></div>
                     <div>
                         <div class="fc-tb-name"><?= htmlspecialchars($_SESSION['name']) ?></div>
                         <div class="fc-tb-role">Community Member</div>
                     </div>
-                </div>
+                </div> -->
             </div>
         </div>
 
@@ -67,10 +67,10 @@ $barangays = $conn->query("SELECT id, name FROM barangays ORDER BY name");
                 <div class="fc-alert fc-alert-error"><i class="bi bi-exclamation-circle-fill"></i> <?= $error ?></div>
                 <?php endif; ?>
                 <?php if ($success): ?>
-                <div class="fc-alert fc-alert-success">
+                <!-- <div class="fc-alert fc-alert-success">
                     <i class="bi bi-check-circle-fill"></i> <?= $success ?>
                     &mdash; <a href="my_reports.php">View my reports</a>
-                </div>
+                </div> -->
                 <?php endif; ?>
 
                 <form method="POST" novalidate>

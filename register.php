@@ -27,12 +27,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'That email is already registered.';
         } else {
             $hash = password_hash($password, PASSWORD_DEFAULT);
-           $ins  = $conn->prepare("INSERT INTO users (full_name,email,contact_number,password,role,status,created_at) VALUES(?,?,?,?,'user','active',NOW())");
-           $ins->bind_param("ssss", $name, $email, $phone, $hash);
+           $ins = $conn->prepare("INSERT INTO users (username,full_name,email,contact_number,password,role,status,created_at) VALUES(?,?,?,?,?,'responder','active',NOW())");
+           $ins->bind_param("sssss", $email, $name, $email, $phone, $hash);
             if ($ins->execute()) {
                 $success = 'Account created! You can now <a href="login.php">sign in</a>.';
             } else {
-                $error = 'Registration failed. Please try again.';
+                $error = 'Registration failed: ' . $ins->error;
             }
         }
     }

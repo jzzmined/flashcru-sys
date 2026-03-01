@@ -33,7 +33,7 @@ $where = ($filter && isset($statusMap[$filter])) ? "WHERE i.status_id = " . $sta
 $reports = $conn->query("
     SELECT i.*, it.name AS type_name, b.name AS barangay,
            u.full_name AS reporter, u.contact_number AS reporter_phone,
-           t.team_name AS team_name
+           t.team_name AS team_name, i.assigned_team_id
     FROM incidents i
     LEFT JOIN incident_types it ON i.incident_type_id = it.id
     LEFT JOIN barangays       b  ON i.barangay_id     = b.id
@@ -45,7 +45,8 @@ $reports = $conn->query("
 if (!$reports)
     die("Reports query failed: " . $conn->error);
 
-$teams_res = $conn->query("SELECT team_id AS id, team_name AS name FROM teams WHERE status='active' ORDER BY team_name");
+// FIX: Removed WHERE status='active' so all teams show regardless of toggle status
+$teams_res = $conn->query("SELECT team_id AS id, team_name AS name FROM teams ORDER BY team_name");
 $teams_arr = [];
 if ($teams_res)
     while ($t = $teams_res->fetch_assoc())
@@ -131,13 +132,13 @@ if ($teams_res)
                                         <td><?= htmlspecialchars($r['barangay']) ?></td>
                                         <td>
                                             <?php if ($r['team_name']): ?>
-                                                <span
-                                                    style="color:var(--fc-success);font-weight:500;"><?= htmlspecialchars($r['team_name']) ?></span>
+                                                <span style="color:var(--fc-success);font-weight:500;"><?= htmlspecialchars($r['team_name']) ?></span>
                                             <?php else: ?>
                                                 <span style="color:var(--fc-muted);font-size:12px;">Unassigned</span>
                                             <?php endif; ?>
                                         </td>
-                                        <td><?= getStatusBadge($statusByID[$r['status_id']] ?? 'pending') ?></td>
+                                        <!-- FIX: fallback to 'pending' prevents "Unknown" badge -->
+                                        <td><?= getStatusBadge($r['status_id'] ?? 1) ?></td>
                                         <td style="color:var(--fc-muted);font-size:12px;white-space:nowrap;">
                                             <?= date('M d, Y', strtotime($r['created_at'])) ?>
                                         </td>
@@ -150,6 +151,7 @@ if ($teams_res)
                                     </tr>
 
                                     <!-- Description row -->
+                                    <!-- FIX: uses street_landmark instead of location_detail -->
                                     <?php if (!empty($r['description']) || !empty($r['street_landmark'])): ?>
                                         <tr style="background:#fafbff;">
                                             <td colspan="8"
@@ -158,7 +160,7 @@ if ($teams_res)
                                                     <i class="bi bi-geo-alt-fill" style="color:var(--fc-success);"></i>
                                                     <?= htmlspecialchars($r['street_landmark']) ?> &nbsp;
                                                 <?php endif; ?>
-                                                <?php if ($r['description']): ?>
+                                                <?php if (!empty($r['description'])): ?>
                                                     <i class="bi bi-chat-text-fill" style="color:var(--fc-primary);"></i>
                                                     <?= nl2br(htmlspecialchars($r['description'])) ?>
                                                 <?php endif; ?>
@@ -198,6 +200,7 @@ if ($teams_res)
                                                             <select name="team_id" class="fc-form-control">
                                                                 <option value="">— Unassigned —</option>
                                                                 <?php foreach ($teams_arr as $t): ?>
+                                                                    <!-- FIX: uses assigned_team_id instead of team_id -->
                                                                     <option value="<?= $t['id'] ?>"
                                                                         <?= $r['assigned_team_id'] == $t['id'] ? 'selected' : '' ?>>
                                                                         <?= htmlspecialchars($t['name']) ?>
@@ -208,6 +211,7 @@ if ($teams_res)
                                                         <div class="mb-2">
                                                             <label class="fc-form-label">Update Status</label>
                                                             <select name="status" class="fc-form-control">
+                                                                <!-- FIX: closing tag was misplaced before, option text was outside the tag -->
                                                                 <?php foreach (['pending', 'assigned', 'responding', 'resolved', 'cancelled'] as $s): ?>
                                                                     <option value="<?= $s ?>" <?= ($statusMap[$s] ?? 0) === (int) $r['status_id'] ? 'selected' : '' ?>>
                                                                         <?= ucfirst($s) ?>

@@ -171,7 +171,7 @@ if (!$log) die("Log query failed: " . $conn->error);
                                                 <span style="color:var(--fc-muted);">—</span>
                                             <?php endif; ?>
                                         </td>
-                                        <td><?= getStatusBadge($r['status']) ?></td>
+                                        <td><?= getStatusBadge($r['status_id']) ?></td>
                                     </tr>
                                     <?php endwhile; ?>
                                 </tbody>
