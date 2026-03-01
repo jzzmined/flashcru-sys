@@ -6,13 +6,13 @@ require_once '../includes/functions.php';
 $uid     = (int)$_SESSION['user_id'];
 $total   = (int)$conn->query("SELECT COUNT(*) c FROM incidents WHERE user_id=$uid")->fetch_assoc()['c'];
 $pending = (int)$conn->query("SELECT COUNT(*) c FROM incidents WHERE user_id=$uid AND status_id=1")->fetch_assoc()['c'];
-$active  = (int)$conn->query("SELECT COUNT(*) c FROM incidents WHERE user_id=$uid AND status_id=2")->fetch_assoc()['c'];
-$resolved= (int)$conn->query("SELECT COUNT(*) c FROM incidents WHERE user_id=$uid AND status_id=3")->fetch_assoc()['c'];
+$active  = (int)$conn->query("SELECT COUNT(*) c FROM incidents WHERE user_id=$uid AND status_id IN(2,3)")->fetch_assoc()['c'];
+$resolved= (int)$conn->query("SELECT COUNT(*) c FROM incidents WHERE user_id=$uid AND status_id=4")->fetch_assoc()['c'];
 
 $recent  = $conn->query("
-    SELECT i.*, it.type_name AS type_name, t.team_name AS team_name
+    SELECT i.*, it.name AS type_name, t.team_name AS team_name
     FROM incidents i
-    LEFT JOIN incident_types it ON i.incident_type_id = it.incident_type_id
+    LEFT JOIN incident_types it ON i.incident_type_id = it.id
     LEFT JOIN teams           t  ON i.assigned_team_id = t.team_id
     WHERE i.user_id = $uid
     ORDER BY i.created_at DESC

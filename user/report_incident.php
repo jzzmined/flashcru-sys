@@ -16,10 +16,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'Please fill in all required fields.';
     } else {
         $stmt = $conn->prepare("
-            INSERT INTO incidents (user_id, incident_type_id, barangay_id, description, location_detail, status, created_at)
-            VALUES (?, ?, ?, ?, ?, 'pending', NOW())
+            INSERT INTO incidents (user_id, incident_type_id, barangay_id, street_landmark, description, status_id, created_at)
+            VALUES (?, ?, ?, ?, ?, 1, NOW())
         ");
-        $stmt->bind_param("iiiss", $uid, $type_id, $bar_id, $desc, $loc);
+        if (!$stmt) die("Prepare failed: " . $conn->error);
+        $stmt->bind_param("iiiss", $uid, $type_id, $bar_id, $loc, $desc);
         if ($stmt->execute()) {
             $inc_id = $conn->insert_id;
             logActivity($uid, "Submitted incident report #$inc_id");
