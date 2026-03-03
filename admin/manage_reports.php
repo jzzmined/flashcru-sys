@@ -97,152 +97,161 @@ if ($teams_res)
             </div>
 
             <div class="fc-card">
-                <?php if ($reports->num_rows === 0): ?>
-                    <div class="fc-empty"><i class="bi bi-inbox"></i>
-                        <h6>No incidents found</h6>
-                    </div>
-                <?php else: ?>
-                    <div class="table-responsive">
-                        <table class="fc-table">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Type</th>
-                                    <th>Reporter</th>
-                                    <th>Barangay</th>
-                                    <th>Team</th>
-                                    <th>Status</th>
-                                    <th>Date</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php while ($r = $reports->fetch_assoc()): ?>
+                <div class="fc-log-scroll">
+                    <div class="fc-card-header">
+                            <div class="fc-card-title">
+                                <i class="bi bi-clock-history" style="color:var(--fc-primary)"></i> Incident Reports
+                            </div>
+                        </div>
+                    <?php if ($reports->num_rows === 0): ?>
+                        <div class="fc-empty"><i class="bi bi-inbox"></i>
+                            <h6>No incidents found</h6>
+                        </div>
+                    <?php else: ?>
+                        <div class="table-responsive">
+                            <table class="fc-table">
+                                <thead>
                                     <tr>
-                                        <td><strong style="color:var(--fc-primary)">#<?= $r['id'] ?></strong></td>
-                                        <td><span class="fc-pill"><?= htmlspecialchars($r['type_name']) ?></span></td>
-                                        <td>
-                                            <div style="font-weight:500;"><?= htmlspecialchars($r['reporter']) ?></div>
-                                            <?php if ($r['reporter_phone']): ?>
-                                                <div style="font-size:11.5px;color:var(--fc-muted);">
-                                                    <?= htmlspecialchars($r['reporter_phone']) ?>
-                                                </div>
-                                            <?php endif; ?>
-                                        </td>
-                                        <td><?= htmlspecialchars($r['barangay']) ?></td>
-                                        <td>
-                                            <?php if ($r['team_name']): ?>
-                                                <span style="color:var(--fc-success);font-weight:500;"><?= htmlspecialchars($r['team_name']) ?></span>
-                                            <?php else: ?>
-                                                <span style="color:var(--fc-muted);font-size:12px;">Unassigned</span>
-                                            <?php endif; ?>
-                                        </td>
-                                        <!-- FIX: fallback to 'pending' prevents "Unknown" badge -->
-                                        <td><?= getStatusBadge($r['status_id'] ?? 1) ?></td>
-                                        <td style="color:var(--fc-muted);font-size:12px;white-space:nowrap;">
-                                            <?= date('M d, Y', strtotime($r['created_at'])) ?>
-                                        </td>
-                                        <td>
-                                            <button class="fc-icon-btn" title="Edit" data-bs-toggle="modal"
-                                                data-bs-target="#modal<?= $r['id'] ?>">
-                                                <i class="bi bi-pencil-fill"></i>
-                                            </button>
-                                        </td>
+                                        <th>ID</th>
+                                        <th>Type</th>
+                                        <th>Reporter</th>
+                                        <th>Barangay</th>
+                                        <th>Team</th>
+                                        <th>Status</th>
+                                        <th>Date</th>
+                                        <th>Action</th>
                                     </tr>
+                                </thead>
+                                <tbody>
+                                    <div class="fc-log-scroll">
+                                        <?php while ($r = $reports->fetch_assoc()): ?>
+                                            <tr>
+                                                <td><strong style="color:var(--fc-primary)">#<?= $r['id'] ?></strong></td>
+                                                <td><span class="fc-pill"><?= htmlspecialchars($r['type_name']) ?></span></td>
+                                                <td>
+                                                    <div style="font-weight:500;"><?= htmlspecialchars($r['reporter']) ?></div>
+                                                    <?php if ($r['reporter_phone']): ?>
+                                                        <div style="font-size:11.5px;color:var(--fc-muted);">
+                                                            <?= htmlspecialchars($r['reporter_phone']) ?>
+                                                        </div>
+                                                    <?php endif; ?>
+                                                </td>
+                                                <td><?= htmlspecialchars($r['barangay']) ?></td>
+                                                <td>
+                                                    <?php if ($r['team_name']): ?>
+                                                        <span
+                                                            style="color:var(--fc-success);font-weight:500;"><?= htmlspecialchars($r['team_name']) ?></span>
+                                                    <?php else: ?>
+                                                        <span style="color:var(--fc-muted);font-size:12px;">Unassigned</span>
+                                                    <?php endif; ?>
+                                                </td>
+                                                <!-- FIX: fallback to 'pending' prevents "Unknown" badge -->
+                                                <td><?= getStatusBadge($r['status_id'] ?? 1) ?></td>
+                                                <td style="color:var(--fc-muted);font-size:12px;white-space:nowrap;">
+                                                    <?= date('M d, Y', strtotime($r['created_at'])) ?>
+                                                </td>
+                                                <td>
+                                                    <button class="fc-icon-btn" title="Edit" data-bs-toggle="modal"
+                                                        data-bs-target="#modal<?= $r['id'] ?>">
+                                                        <i class="bi bi-pencil-fill"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
 
-                                    <!-- Description row -->
-                                    <!-- FIX: uses street_landmark instead of location_detail -->
-                                    <?php if (!empty($r['description']) || !empty($r['street_landmark'])): ?>
-                                        <tr style="background:#fafbff;">
-                                            <td colspan="8"
-                                                style="padding:7px 18px 12px;color:var(--fc-muted);font-size:12.5px;border-top:none;">
-                                                <?php if (!empty($r['street_landmark'])): ?>
-                                                    <i class="bi bi-geo-alt-fill" style="color:var(--fc-success);"></i>
-                                                    <?= htmlspecialchars($r['street_landmark']) ?> &nbsp;
-                                                <?php endif; ?>
-                                                <?php if (!empty($r['description'])): ?>
-                                                    <i class="bi bi-chat-text-fill" style="color:var(--fc-primary);"></i>
-                                                    <?= nl2br(htmlspecialchars($r['description'])) ?>
-                                                <?php endif; ?>
-                                            </td>
-                                        </tr>
-                                    <?php endif; ?>
+                                            <!-- Description row -->
+                                            <!-- FIX: uses street_landmark instead of location_detail -->
+                                            <?php if (!empty($r['description']) || !empty($r['street_landmark'])): ?>
+                                                <tr style="background:#fafbff;">
+                                                    <td colspan="8"
+                                                        style="padding:7px 18px 12px;color:var(--fc-muted);font-size:12.5px;border-top:none;">
+                                                        <?php if (!empty($r['street_landmark'])): ?>
+                                                            <i class="bi bi-geo-alt-fill" style="color:var(--fc-success);"></i>
+                                                            <?= htmlspecialchars($r['street_landmark']) ?> &nbsp;
+                                                        <?php endif; ?>
+                                                        <?php if (!empty($r['description'])): ?>
+                                                            <i class="bi bi-chat-text-fill" style="color:var(--fc-primary);"></i>
+                                                            <?= nl2br(htmlspecialchars($r['description'])) ?>
+                                                        <?php endif; ?>
+                                                    </td>
+                                                </tr>
+                                            <?php endif; ?>
 
-                                    <!-- Edit Modal -->
-                                    <div class="modal fade" id="modal<?= $r['id'] ?>" tabindex="-1">
-                                        <div class="modal-dialog">
-                                            <div class="modal-content">
-                                                <div class="modal-header">
-                                                    <h5 class="modal-title">
-                                                        <i class="bi bi-pencil-fill"
-                                                            style="color:var(--fc-primary);margin-right:8px;"></i>
-                                                        Update Incident #<?= $r['id'] ?>
-                                                    </h5>
-                                                    <button class="btn-close" data-bs-dismiss="modal"></button>
+                                            <!-- Edit Modal -->
+                                            <div class="modal fade" id="modal<?= $r['id'] ?>" tabindex="-1">
+                                                <div class="modal-dialog">
+                                                    <div class="modal-content">
+                                                        <div class="modal-header">
+                                                            <h5 class="modal-title">
+                                                                <i class="bi bi-pencil-fill"
+                                                                    style="color:var(--fc-primary);margin-right:8px;"></i>
+                                                                Update Incident #<?= $r['id'] ?>
+                                                            </h5>
+                                                            <button class="btn-close" data-bs-dismiss="modal"></button>
+                                                        </div>
+                                                        <form method="POST">
+                                                            <div class="modal-body">
+                                                                <input type="hidden" name="update_id" value="<?= $r['id'] ?>">
+                                                                <div class="mb-3">
+                                                                    <label class="fc-form-label">Incident Type</label>
+                                                                    <input type="text" class="fc-form-control"
+                                                                        value="<?= htmlspecialchars($r['type_name']) ?>"
+                                                                        readonly style="background:#f7f9fc;">
+                                                                </div>
+                                                                <div class="mb-3">
+                                                                    <label class="fc-form-label">Reporter</label>
+                                                                    <input type="text" class="fc-form-control"
+                                                                        value="<?= htmlspecialchars($r['reporter']) ?>" readonly
+                                                                        style="background:#f7f9fc;">
+                                                                </div>
+                                                                <div class="mb-3">
+                                                                    <label class="fc-form-label">Assign Response Team</label>
+                                                                    <select name="team_id" class="fc-form-control">
+                                                                        <option value="">— Unassigned —</option>
+                                                                        <?php foreach ($teams_arr as $t): ?>
+                                                                            <!-- FIX: uses assigned_team_id instead of team_id -->
+                                                                            <option value="<?= $t['id'] ?>"
+                                                                                <?= $r['assigned_team_id'] == $t['id'] ? 'selected' : '' ?>>
+                                                                                <?= htmlspecialchars($t['name']) ?>
+                                                                            </option>
+                                                                        <?php endforeach; ?>
+                                                                    </select>
+                                                                </div>
+                                                                <div class="mb-2">
+                                                                    <label class="fc-form-label">Update Status</label>
+                                                                    <select name="status" class="fc-form-control">
+                                                                        <!-- FIX: closing tag was misplaced before, option text was outside the tag -->
+                                                                        <?php foreach (['pending', 'assigned', 'responding', 'resolved', 'cancelled'] as $s): ?>
+                                                                            <option value="<?= $s ?>" <?= ($statusMap[$s] ?? 0) === (int) $r['status_id'] ? 'selected' : '' ?>>
+                                                                                <?= ucfirst($s) ?>
+                                                                            </option>
+                                                                        <?php endforeach; ?>
+                                                                    </select>
+                                                                </div>
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button type="button" class="fc-btn"
+                                                                    style="background:#fff;color:var(--fc-text);border:1.5px solid var(--fc-border);"
+                                                                    data-bs-dismiss="modal">
+                                                                    Cancel
+                                                                </button>
+                                                                <button type="submit" class="fc-btn fc-btn-primary">
+                                                                    <i class="bi bi-save-fill"></i> Save Changes
+                                                                </button>
+                                                            </div>
+                                                        </form>
+                                                    </div>
                                                 </div>
-                                                <form method="POST">
-                                                    <div class="modal-body">
-                                                        <input type="hidden" name="update_id" value="<?= $r['id'] ?>">
-                                                        <div class="mb-3">
-                                                            <label class="fc-form-label">Incident Type</label>
-                                                            <input type="text" class="fc-form-control"
-                                                                value="<?= htmlspecialchars($r['type_name']) ?>" readonly
-                                                                style="background:#f7f9fc;">
-                                                        </div>
-                                                        <div class="mb-3">
-                                                            <label class="fc-form-label">Reporter</label>
-                                                            <input type="text" class="fc-form-control"
-                                                                value="<?= htmlspecialchars($r['reporter']) ?>" readonly
-                                                                style="background:#f7f9fc;">
-                                                        </div>
-                                                        <div class="mb-3">
-                                                            <label class="fc-form-label">Assign Response Team</label>
-                                                            <select name="team_id" class="fc-form-control">
-                                                                <option value="">— Unassigned —</option>
-                                                                <?php foreach ($teams_arr as $t): ?>
-                                                                    <!-- FIX: uses assigned_team_id instead of team_id -->
-                                                                    <option value="<?= $t['id'] ?>"
-                                                                        <?= $r['assigned_team_id'] == $t['id'] ? 'selected' : '' ?>>
-                                                                        <?= htmlspecialchars($t['name']) ?>
-                                                                    </option>
-                                                                <?php endforeach; ?>
-                                                            </select>
-                                                        </div>
-                                                        <div class="mb-2">
-                                                            <label class="fc-form-label">Update Status</label>
-                                                            <select name="status" class="fc-form-control">
-                                                                <!-- FIX: closing tag was misplaced before, option text was outside the tag -->
-                                                                <?php foreach (['pending', 'assigned', 'responding', 'resolved', 'cancelled'] as $s): ?>
-                                                                    <option value="<?= $s ?>" <?= ($statusMap[$s] ?? 0) === (int) $r['status_id'] ? 'selected' : '' ?>>
-                                                                        <?= ucfirst($s) ?>
-                                                                    </option>
-                                                                <?php endforeach; ?>
-                                                            </select>
-                                                        </div>
-                                                    </div>
-                                                    <div class="modal-footer">
-                                                        <button type="button" class="fc-btn"
-                                                            style="background:#fff;color:var(--fc-text);border:1.5px solid var(--fc-border);"
-                                                            data-bs-dismiss="modal">
-                                                            Cancel
-                                                        </button>
-                                                        <button type="submit" class="fc-btn fc-btn-primary">
-                                                            <i class="bi bi-save-fill"></i> Save Changes
-                                                        </button>
-                                                    </div>
-                                                </form>
                                             </div>
-                                        </div>
+                                        <?php endwhile; ?>
                                     </div>
-                                <?php endwhile; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                <?php endif; ?>
-            </div>
+                                </tbody>
+                            </table>
+                        </div>
+                    <?php endif; ?>
+                </div>
 
+            </div>
         </div>
     </div>
-</div>
 
-<?php include '../includes/footer.php'; ?>
+    <?php include '../includes/footer.php'; ?>
