@@ -87,29 +87,29 @@ if (!$log)
             <!-- Stat cards row 1 -->
             <div class="row g-3 mb-3">
                 <div class="col-6 col-xl-3">
-                    <div class="fc-stat-card">
-                        <div class="fc-stat-icon c-black"><i class="bi bi-file-earmark-text-fill"></i></div>
+                    <div class="fc-stat-card c-black ">
+                        <div class="fc-stat-icon c-red"><i class="bi bi-clipboard2-pulse-fill"></i></div>
                         <div class="fc-stat-val"><?= $total ?></div>
                         <div class="fc-stat-lbl">Total Incidents</div>
                     </div>
                 </div>
                 <div class="col-6 col-xl-3">
                     <div class="fc-stat-card">
-                        <div class="fc-stat-icon c-black"><i class="bi bi-hourglass-split"></i></div>
+                        <div class="fc-stat-icon c-ylw"><i class="bi bi-clock-fill"></i></div>
                         <div class="fc-stat-val"><?= $pending ?></div>
                         <div class="fc-stat-lbl">Pending</div>
                     </div>
                 </div>
                 <div class="col-6 col-xl-3">
                     <div class="fc-stat-card">
-                        <div class="fc-stat-icon c-black"><i class="bi bi-lightning-charge-fill"></i></div>
+                        <div class="fc-stat-icon c-blu"><i class="bi bi-activity"></i></div>
                         <div class="fc-stat-val"><?= $active ?></div>
                         <div class="fc-stat-lbl">Active Response</div>
                     </div>
                 </div>
                 <div class="col-6 col-xl-3">
                     <div class="fc-stat-card">
-                        <div class="fc-stat-icon c-black"><i class="bi bi-check-circle-fill"></i></div>
+                        <div class="fc-stat-icon c-grn"><i class="bi bi-patch-check-fill"></i></div>
                         <div class="fc-stat-val"><?= $resolved ?></div>
                         <div class="fc-stat-lbl">Resolved</div>
                     </div>
@@ -121,7 +121,7 @@ if (!$log)
                 <div class="col-md-6">
                     <div class="fc-stat-card" style="border-left:4px solid #100f0fc7;">
                         <div style="display:flex;align-items:center;gap:16px;">
-                            <div class="fc-stat-icon c-black"><i class="bi bi-people-fill"></i></div>
+                            <div class="fc-stat-icon c-blu"><i class="bi bi-person-vcard-fill"></i></div>
                             <div>
                                 <div class="fc-stat-val"><?= $users ?></div>
                                 <div class="fc-stat-lbl">Registered Users</div>
@@ -132,7 +132,7 @@ if (!$log)
                 <div class="col-md-6">
                     <div class="fc-stat-card" style="border-left:4px solid #100f0fc7;">
                         <div style="display:flex;align-items:center;gap:16px;">
-                            <div class="fc-stat-icon c-black"><i class="bi bi-shield-fill-check"></i></div>
+                            <div class="fc-stat-icon c-grn"><i class="bi bi-shield-fill-exclamation"></i></div>
                             <div>
                                 <div class="fc-stat-val"><?= $teams ?></div>
                                 <div class="fc-stat-lbl">Response Teams</div>
@@ -143,9 +143,9 @@ if (!$log)
             </div>
 
             <!-- Recent Incidents + Activity Log -->
-            <div class="row g-4">
-                <div class="col-lg-8">
-                    <div class="fc-card">
+            <div class="row g-4 align-items-stretch">
+                <div class="col-lg-8 d-flex flex-column" style="height:430px;">
+                    <div class="fc-card" style="flex:1;">
                         <div class="fc-card-header">
                             <div class="fc-card-title">
                                 <i class="bi bi-clock-history" style="color:var(--fc-primary)"></i> Latest Incidents
@@ -191,13 +191,13 @@ if (!$log)
                                         </tbody>
                                     </table>
                                 </div>
-                            </div>
-                        <?php endif; ?>
+                            <?php endif; ?>
+                        </div>
                     </div>
                 </div>
 
-                <div class="col-lg-4">
-                    <div class="fc-card">
+                <div class="col-lg-4 d-flex flex-column" style="height:430px;">
+                    <div class="fc-card" style="flex:1;">
                         <div class="fc-card-header">
                             <div class="fc-card-title">
                                 <i class="bi bi-activity" style="color:var(--fc-success)"></i> Activity Log

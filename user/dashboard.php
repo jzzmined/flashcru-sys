@@ -3,14 +3,14 @@ require_once '../includes/auth_user.php';
 require_once '../includes/db_connect.php';
 require_once '../includes/functions.php';
 
-$uid     = (int)$_SESSION['user_id'];
-$total   = (int)$conn->query("SELECT COUNT(*) c FROM incidents WHERE user_id=$uid")->fetch_assoc()['c'];
-$pending = (int)$conn->query("SELECT COUNT(*) c FROM incidents WHERE user_id=$uid AND status_id=1")->fetch_assoc()['c'];
-$active  = (int)$conn->query("SELECT COUNT(*) c FROM incidents WHERE user_id=$uid AND status_id IN(2,3)")->fetch_assoc()['c'];
-$resolved= (int)$conn->query("SELECT COUNT(*) c FROM incidents WHERE user_id=$uid AND status_id=4")->fetch_assoc()['c'];
+$uid = (int) $_SESSION['user_id'];
+$total = (int) $conn->query("SELECT COUNT(*) c FROM incidents WHERE user_id=$uid")->fetch_assoc()['c'];
+$pending = (int) $conn->query("SELECT COUNT(*) c FROM incidents WHERE user_id=$uid AND status_id=1")->fetch_assoc()['c'];
+$active = (int) $conn->query("SELECT COUNT(*) c FROM incidents WHERE user_id=$uid AND status_id IN(2,3)")->fetch_assoc()['c'];
+$resolved = (int) $conn->query("SELECT COUNT(*) c FROM incidents WHERE user_id=$uid AND status_id=4")->fetch_assoc()['c'];
 
 // FIX: Added b.name AS barangay to the query so barangay column is available
-$recent  = $conn->query("
+$recent = $conn->query("
     SELECT i.*, it.name AS type_name, t.team_name AS team_name,
            b.name AS barangay
     FROM incidents i
@@ -21,9 +21,10 @@ $recent  = $conn->query("
     ORDER BY i.created_at DESC
     LIMIT 6
 ");
-if (!$recent) die("Recent query failed: " . $conn->error);
+if (!$recent)
+    die("Recent query failed: " . $conn->error);
 
-$hour = (int)date('H');
+$hour = (int) date('H');
 $greeting = $hour < 12 ? 'Good Morning' : ($hour < 17 ? 'Good Afternoon' : 'Good Evening');
 $firstname = explode(' ', $_SESSION['name'])[0];
 ?>
@@ -50,7 +51,7 @@ $firstname = explode(' ', $_SESSION['name'])[0];
                     <?php if ($pending > 0): ?><span class="fc-notif-dot"></span><?php endif; ?>
                 </div>
                 <div class="fc-tb-user">
-                    <div class="fc-user-avatar"><?= strtoupper(substr($_SESSION['name'],0,1)) ?></div>
+                    <div class="fc-user-avatar"><?= strtoupper(substr($_SESSION['name'], 0, 1)) ?></div>
                     <div>
                         <div class="fc-tb-name"><?= htmlspecialchars($_SESSION['name']) ?></div>
                         <div class="fc-tb-role">Community Member</div>
@@ -73,28 +74,28 @@ $firstname = explode(' ', $_SESSION['name'])[0];
             <!-- Stats -->
             <div class="row g-3 mb-4">
                 <div class="col-6 col-xl-3">
-                    <div class="fc-stat-card c-red">
+                    <div class="fc-stat-card">
                         <div class="fc-stat-icon c-red"><i class="bi bi-file-earmark-text-fill"></i></div>
                         <div class="fc-stat-val" data-target="<?= $total ?>"><?= $total ?></div>
                         <div class="fc-stat-lbl">Total Reports</div>
                     </div>
                 </div>
                 <div class="col-6 col-xl-3">
-                    <div class="fc-stat-card c-ylw">
+                    <div class="fc-stat-card">
                         <div class="fc-stat-icon c-ylw"><i class="bi bi-clock-fill"></i></div>
                         <div class="fc-stat-val"><?= $pending ?></div>
                         <div class="fc-stat-lbl">Pending</div>
                     </div>
                 </div>
                 <div class="col-6 col-xl-3">
-                    <div class="fc-stat-card c-blu">
+                    <div class="fc-stat-card">
                         <div class="fc-stat-icon c-blu"><i class="bi bi-lightning-charge-fill"></i></div>
                         <div class="fc-stat-val"><?= $active ?></div>
                         <div class="fc-stat-lbl">Active Response</div>
                     </div>
                 </div>
                 <div class="col-6 col-xl-3">
-                    <div class="fc-stat-card c-grn">
+                    <div class="fc-stat-card">
                         <div class="fc-stat-icon c-grn"><i class="bi bi-check-circle-fill"></i></div>
                         <div class="fc-stat-val"><?= $resolved ?></div>
                         <div class="fc-stat-lbl">Resolved</div>
@@ -114,57 +115,63 @@ $firstname = explode(' ', $_SESSION['name'])[0];
                 </div>
                 <div>
                     <?php if ($recent->num_rows === 0): ?>
-                    <div class="fc-empty">
-                        <i class="bi bi-file-earmark-x"></i>
-                        <h6>No Reports Yet</h6>
-                        <p style="font-size:13px;">You haven't submitted any incident reports.</p>
-                        <a href="report_incident.php" class="fc-btn fc-btn-primary" style="margin-top:8px;font-size:13px;">
-                            Report Now
-                        </a>
-                    </div>
+                        <div class="fc-empty">
+                            <i class="bi bi-file-earmark-x"></i>
+                            <h6>No Reports Yet</h6>
+                            <p style="font-size:13px;">You haven't submitted any incident reports.</p>
+                            <a href="report_incident.php" class="fc-btn fc-btn-primary"
+                                style="margin-top:8px;font-size:13px;">
+                                Report Now
+                            </a>
+                        </div>
                     <?php else: ?>
-                    <div class="table-responsive">
-                        <table class="fc-table">
-                            <thead>
-                                <tr>
-                                    <th>#ID</th>
-                                    <th>Type</th>
-                                    <th>Barangay</th>
-                                    <th>Team Assigned</th>
-                                    <th>Status</th>
-                                    <th>Date Filed</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php while ($r = $recent->fetch_assoc()): ?>
-                                <tr>
-                                    <td><strong style="color:var(--fc-primary)">#<?= $r['id'] ?></strong></td>
-                                    <td><span class="fc-pill"><i class="bi bi-tag-fill"></i><?= htmlspecialchars($r['type_name']) ?></span></td>
-                                    <!-- FIX: barangay now comes from the JOIN -->
-                                    <td><?= htmlspecialchars($r['barangay'] ?? 'N/A') ?></td>
-                                    <td>
-                                        <?php if ($r['team_name']): ?>
-                                            <span style="color:var(--fc-success);font-weight:500;"><?= htmlspecialchars($r['team_name']) ?></span>
-                                        <?php else: ?>
-                                            <span style="color:var(--fc-muted);font-size:12px;">Unassigned</span>
-                                        <?php endif; ?>
-                                    </td>
-                                    <!-- FIX: pass status_id (int) instead of status (string) -->
-                                    <td><?= getStatusBadge($r['status_id'] ?? 1) ?></td>
-                                    <td style="color:var(--fc-muted);font-size:12.5px;white-space:nowrap;">
-                                        <?= date('M d, Y', strtotime($r['created_at'])) ?>
-                                    </td>
-                                </tr>
-                                <?php endwhile; ?>
-                            </tbody>
-                        </table>
+                        <div class="fc-log-scroll"></div>
+                        <div class="table-responsive">
+                            <table class="fc-table">
+                                <thead>
+                                    <tr>
+                                        <th>#ID</th>
+                                        <th>Type</th>
+                                        <th>Barangay</th>
+                                        <th>Team Assigned</th>
+                                        <th>Status</th>
+                                        <th>Date Filed</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php while ($r = $recent->fetch_assoc()): ?>
+                                        <tr>
+                                            <td><strong style="color:var(--fc-primary)">#<?= $r['id'] ?></strong></td>
+                                            <td><span class="fc-pill"><i
+                                                        class="bi bi-tag-fill"></i><?= htmlspecialchars($r['type_name']) ?></span>
+                                            </td>
+                                            <!-- FIX: barangay now comes from the JOIN -->
+                                            <td><?= htmlspecialchars($r['barangay'] ?? 'N/A') ?></td>
+                                            <td>
+                                                <?php if ($r['team_name']): ?>
+                                                    <span
+                                                        style="color:var(--fc-success);font-weight:500;"><?= htmlspecialchars($r['team_name']) ?></span>
+                                                <?php else: ?>
+                                                    <span style="color:var(--fc-muted);font-size:12px;">Unassigned</span>
+                                                <?php endif; ?>
+                                            </td>
+                                            <!-- FIX: pass status_id (int) instead of status (string) -->
+                                            <td><?= getStatusBadge($r['status_id'] ?? 1) ?></td>
+                                            <td style="color:var(--fc-muted);font-size:12.5px;white-space:nowrap;">
+                                                <?= date('M d, Y', strtotime($r['created_at'])) ?>
+                                            </td>
+                                        </tr>
+                                    <?php endwhile; ?>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                    <?php endif; ?>
-                </div>
+                <?php endif; ?>
             </div>
+        </div>
 
-        </div><!-- /fc-content -->
-    </div><!-- /fc-main -->
+    </div><!-- /fc-content -->
+</div><!-- /fc-main -->
 </div><!-- /fc-app -->
 
 <?php include '../includes/footer.php'; ?>

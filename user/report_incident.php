@@ -23,6 +23,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->bind_param("iiiss", $uid, $type_id, $bar_id, $loc, $desc);
         if ($stmt->execute()) {
             $inc_id = $conn->insert_id;
+
+            // Handle file uploads
+            if (!empty($_FILES['evidence']['name'][0])) {
+                $upload_dir = '../assets/uploads/evidence/';
+                if (!is_dir($upload_dir)) mkdir($upload_dir, 0755, true);
+
+                $allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+                foreach ($_FILES['evidence']['tmp_name'] as $i => $tmp) {
+                    if ($_FILES['evidence']['error'][$i] !== UPLOAD_ERR_OK) continue;
+                    $mime = mime_content_type($tmp);
+                    if (!in_array($mime, $allowed)) continue;
+                    if ($_FILES['evidence']['size'][$i] > 10 * 1024 * 1024) continue;
+
+                    $ext      = pathinfo($_FILES['evidence']['name'][$i], PATHINFO_EXTENSION);
+                    $filename = 'evidence_' . $inc_id . '_' . uniqid() . '.' . $ext;
+                    if (move_uploaded_file($tmp, $upload_dir . $filename)) {
+                        $filepath = 'assets/uploads/evidence/' . $filename;
+                        $orig     = $conn->real_escape_string($_FILES['evidence']['name'][$i]);
+                        $conn->query("INSERT INTO incident_evidence (incident_id, file_path, file_name) VALUES ($inc_id, '$filepath', '$orig')");
+                    }
+                }
+            }
+
             logActivity($uid, "Submitted incident report #$inc_id");
             $success = "Incident reported successfully! Report ID: <strong>#$inc_id</strong>";
         } else {
@@ -48,16 +71,7 @@ $barangays = $conn->query("SELECT id, name FROM barangays ORDER BY name");
                     <div class="fc-breadcrumb">Reporting Incident</div>
                 </div>
             </div>
-            <div class="fc-topbar-right">
-                <!-- <div class="fc-notif-btn"><i class="bi bi-bell"></i></div>
-                <div class="fc-tb-user">
-                    <div class="fc-user-avatar"><?= strtoupper(substr($_SESSION['name'],0,1)) ?></div>
-                    <div>
-                        <div class="fc-tb-name"><?= htmlspecialchars($_SESSION['name']) ?></div>
-                        <div class="fc-tb-role">Community Member</div>
-                    </div>
-                </div> -->
-            </div>
+            <div class="fc-topbar-right"></div>
         </div>
 
         <div class="fc-content">
@@ -67,14 +81,15 @@ $barangays = $conn->query("SELECT id, name FROM barangays ORDER BY name");
                 <div class="fc-alert fc-alert-error"><i class="bi bi-exclamation-circle-fill"></i> <?= $error ?></div>
                 <?php endif; ?>
                 <?php if ($success): ?>
-                <!-- <div class="fc-alert fc-alert-success">
+                <div class="fc-alert fc-alert-success">
                     <i class="bi bi-check-circle-fill"></i> <?= $success ?>
                     &mdash; <a href="my_reports.php">View my reports</a>
-                </div> -->
+                </div>
                 <?php endif; ?>
 
-                <form method="POST" novalidate>
-                    <div class="fc-form-section">
+                <form method="POST" enctype="multipart/form-data" novalidate>
+                    <!-- Incident Info Section -->
+                    <div class="fc-form-section" style="height:auto;margin-bottom:20px;">
                         <div class="fc-form-section-title">
                             <i class="bi bi-exclamation-triangle-fill"></i> Incident Information
                         </div>
@@ -123,19 +138,77 @@ $barangays = $conn->query("SELECT id, name FROM barangays ORDER BY name");
                         </div>
                     </div>
 
-                    <div style="display:flex;gap:12px;flex-wrap:wrap;">
-                        <button type="submit" class="fc-btn fc-btn-primary">
-                            <i class="bi bi-send-fill"></i> Submit Report
-                        </button>
-                        <a href="dashboard.php" class="fc-btn" style="background:#fff;color:var(--fc-text);border:1.5px solid var(--fc-border);">
-                            Cancel
-                        </a>
+                    <!-- Evidence Upload Section -->
+                    <div class="fc-form-section" style="height:auto;margin-bottom:20px;">
+                        <div class="fc-form-section-title">
+                            <i class="bi bi-image-fill"></i> Attach Evidence
+                        </div>
+
+                        <div class="fc-dropzone" id="dropzone">
+                            <input type="file" name="evidence[]" id="evidenceInput"
+                                   accept="image/jpeg,image/png,image/gif,image/webp"
+                                   multiple style="display:none;">
+                            <div class="fc-dropzone-body" id="dropzoneBody" onclick="document.getElementById('evidenceInput').click()">
+                                <i class="bi bi-cloud-arrow-up-fill fc-dropzone-icon"></i>
+                                <p class="fc-dropzone-text">Drop files here or <span class="fc-dropzone-browse">browse</span></p>
+                                <p class="fc-dropzone-hint">Supports JPG, PNG (Max 10MB)</p>
+                            </div>
+                            <div class="fc-dropzone-previews" id="previewContainer"></div>
+                        </div>
                     </div>
+
+                    <!-- Submit Buttons -->
+                    <button type="submit" class="fc-btn fc-btn-primary" style="width:100%;justify-content:center;padding:14px;font-size:15px;letter-spacing:.04em;text-transform:uppercase;">
+                        <i class="bi bi-send-fill"></i> Submit Incident Report
+                    </button>
+                    <a href="dashboard.php" class="fc-btn" style="width:100%;justify-content:center;margin-top:10px;background:#fff;color:var(--fc-text);border:1.5px solid var(--fc-border);">
+                        Cancel
+                    </a>
                 </form>
 
             </div>
         </div>
     </div>
 </div>
+
+<script>
+const input = document.getElementById('evidenceInput');
+const dropzone = document.getElementById('dropzone');
+const preview = document.getElementById('previewContainer');
+const body = document.getElementById('dropzoneBody');
+
+input.addEventListener('change', () => handleFiles(input.files));
+
+dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('fc-dropzone--active'); });
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('fc-dropzone--active'));
+dropzone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropzone.classList.remove('fc-dropzone--active');
+    handleFiles(e.dataTransfer.files);
+});
+
+function handleFiles(files) {
+    Array.from(files).forEach(file => {
+        if (!file.type.startsWith('image/')) return;
+        if (file.size > 10 * 1024 * 1024) { alert(file.name + ' exceeds 10MB limit.'); return; }
+        const reader = new FileReader();
+        reader.onload = e => {
+            const item = document.createElement('div');
+            item.className = 'fc-preview-item';
+            // img is constrained by CSS: height:80px, object-fit:cover
+            item.innerHTML = `
+                <img src="${e.target.result}" alt="${file.name}">
+                <div class="fc-preview-name">${file.name}</div>
+                <button type="button" class="fc-preview-remove" onclick="this.parentElement.remove()">
+                    <i class="bi bi-x"></i>
+                </button>`;
+            preview.appendChild(item);
+            // Hide the drop prompt once files are added
+            body.style.padding = '12px 16px 0';
+        };
+        reader.readAsDataURL(file);
+    });
+}
+</script>
 
 <?php include '../includes/footer.php'; ?>
