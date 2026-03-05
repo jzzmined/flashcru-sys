@@ -17,7 +17,6 @@ function getStatusBadge($status_id) {
         4 => ['label' => 'Resolved',   'color' => 'success'],
         5 => ['label' => 'Cancelled',  'color' => 'secondary'],
     ];
-    
     $data = $badges[$status_id] ?? ['label' => 'Unknown', 'color' => 'secondary'];
     return "<span class='badge bg-{$data['color']}'>" . $data['label'] . "</span>";
 }
@@ -33,7 +32,6 @@ function countByStatus($status_label) {
     global $conn;
     $status_map = ['pending' => 1, 'assigned' => 2, 'responding' => 3, 'resolved' => 4, 'cancelled' => 5];
     $id = $status_map[$status_label] ?? 0;
-
     $stmt = $conn->prepare("SELECT COUNT(*) AS c FROM incidents WHERE status_id = ?");
     $stmt->bind_param("i", $id);
     $stmt->execute();
@@ -45,13 +43,15 @@ function totalIncidents() {
     return $conn->query("SELECT COUNT(*) AS c FROM incidents")->fetch_assoc()['c'];
 }
 
+// FIX: Changed role from 'responder' to 'user' to count actual registered community users
 function totalUsers() {
     global $conn;
-    return (int)$conn->query("SELECT COUNT(*) c FROM users WHERE role='responder'")->fetch_assoc()['c'];
+    return (int)$conn->query("SELECT COUNT(*) c FROM users WHERE role='user'")->fetch_assoc()['c'];
 }
 
 function totalTeams() {
     global $conn;
-    return $conn->query("SELECT COUNT(*) AS c FROM teams")->fetch_assoc()['c'];
+    // Exclude archived (soft-deleted) teams
+    return (int)$conn->query("SELECT COUNT(*) AS c FROM teams WHERE status != 'deleted'")->fetch_assoc()['c'];
 }
 ?>

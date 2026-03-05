@@ -5,41 +5,53 @@ require_once '../includes/functions.php';
 
 $msg = $err = '';
 
-// Add type
+// Add type — FIX: description is now included in INSERT
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_type'])) {
-    $name = sanitize($_POST['type_name']    ?? '');
-    $desc = sanitize($_POST['description']  ?? '');
+    $name = sanitize($_POST['type_name']   ?? '');
+    $desc = sanitize($_POST['description'] ?? '');
 
     if (!$name) {
         $err = 'Type name is required.';
     } else {
-        $stmt = $conn->prepare("INSERT INTO incident_types (name) VALUES (?)");
-        $stmt->bind_param("s", $name);
+        $stmt = $conn->prepare("INSERT INTO incident_types (name, description) VALUES (?, ?)");
+        $stmt->bind_param("ss", $name, $desc);
         if ($stmt->execute()) {
+            logActivity($_SESSION['user_id'], "Added incident type: $name");
             $msg = "Incident type \"$name\" added.";
         } else {
-            $err = 'Failed to add type.';
+            $err = 'Failed to add type: ' . $stmt->error;
         }
     }
 }
 
-// Edit type
+// Edit type — FIX: description is now included in UPDATE using prepared statement
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_id'])) {
     $id   = (int)$_POST['edit_id'];
     $name = sanitize($_POST['edit_name'] ?? '');
     $desc = sanitize($_POST['edit_desc'] ?? '');
-    $conn->query("UPDATE incident_types SET name='$name' WHERE id=$id");
-    $msg = "Incident type updated.";
+    if (!$name) {
+        $err = 'Type name is required.';
+    } else {
+        $stmt = $conn->prepare("UPDATE incident_types SET name=?, description=? WHERE id=?");
+        $stmt->bind_param("ssi", $name, $desc, $id);
+        if ($stmt->execute()) {
+            logActivity($_SESSION['user_id'], "Updated incident type #$id: $name");
+            $msg = "Incident type updated.";
+        } else {
+            $err = 'Failed to update type.';
+        }
+    }
 }
 
 // Delete type
 if (isset($_GET['delete'])) {
-    $id = (int)$_GET['delete'];
+    $id   = (int)$_GET['delete'];
     $used = $conn->query("SELECT COUNT(*) c FROM incidents WHERE incident_type_id=$id")->fetch_assoc()['c'];
     if ($used > 0) {
         $err = 'Cannot delete — this type is used in existing incidents.';
     } else {
         $conn->query("DELETE FROM incident_types WHERE id=$id");
+        logActivity($_SESSION['user_id'], "Deleted incident type #$id");
         $msg = 'Incident type deleted.';
     }
 }
@@ -60,7 +72,7 @@ $types = $conn->query("
     <div class="fc-main">
         <div class="fc-topbar">
             <div class="fc-topbar-left">
-                <button class="fc-menu-btn" onclick="fcToggleSidebar()" style="display:block;"><i class="bi bi-list"></i></button>
+                <button class="fc-menu-btn" onclick="fcToggleSidebar()"><i class="bi bi-list"></i></button>
                 <div>
                     <div class="fc-page-title">Incident Types</div>
                     <div class="fc-breadcrumb">Admin / Manage Incident Types</div>
@@ -91,7 +103,7 @@ $types = $conn->query("
                                 <textarea name="description" class="fc-form-control" rows="3"
                                           placeholder="Brief description of this incident type..."></textarea>
                             </div>
-                            <button type="submit" name="add_type" class="fc-btn fc-btn-primary" style="width:100%;">
+                            <button type="submit" name="add_type" class="fc-btn fc-btn-primary" style="width:100%;justify-content:center;">
                                 <i class="bi bi-plus-circle-fill"></i> Add Type
                             </button>
                         </div>
@@ -110,12 +122,15 @@ $types = $conn->query("
                         <?php if ($types->num_rows === 0): ?>
                         <div class="fc-empty"><i class="bi bi-tags"></i><h6>No Types Yet</h6></div>
                         <?php else: ?>
-                        <div class="table-responsive" style="max-height: 480px; overflow-y: auto;">
+                        <div class="table-responsive" style="max-height:480px;overflow-y:auto;">
                             <table class="fc-table">
                                 <thead>
                                     <tr>
-                                        <th>Type Name</th><th>Description</th>
-                                        <th>Usage</th><th>Added</th><th>Actions</th>
+                                        <th>Type Name</th>
+                                        <th>Description</th>
+                                        <th>Usage</th>
+                                        <th>Added</th>
+                                        <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -139,21 +154,17 @@ $types = $conn->query("
                                             <?= $it['created_at'] ? date('M d, Y', strtotime($it['created_at'])) : '—' ?>
                                         </td>
                                         <td style="display:flex;gap:6px;">
-                                            <!-- Edit -->
                                             <button class="fc-icon-btn" data-bs-toggle="modal"
-                                                    data-bs-target="#editType<?= $it['id'] ?>"
-                                                    title="Edit">
+                                                    data-bs-target="#editType<?= $it['id'] ?>" title="Edit">
                                                 <i class="bi bi-pencil-fill"></i>
                                             </button>
-                                            <!-- Delete (only if unused) -->
                                             <?php if ($it['usage_count'] == 0): ?>
                                             <a href="?delete=<?= $it['id'] ?>" class="fc-icon-btn del"
-                                               onclick="return fcConfirm('Delete this incident type?')"
-                                               title="Delete">
+                                               onclick="return fcConfirm('Delete this incident type?')" title="Delete">
                                                 <i class="bi bi-trash-fill"></i>
                                             </a>
                                             <?php else: ?>
-                                            <span class="fc-icon-btn" style="cursor:default;opacity:.4;" title="In use — cannot delete">
+                                            <span class="fc-icon-btn" style="cursor:default;opacity:.35;" title="In use — cannot delete">
                                                 <i class="bi bi-lock-fill"></i>
                                             </span>
                                             <?php endif; ?>
@@ -172,7 +183,7 @@ $types = $conn->query("
                                                     <div class="modal-body">
                                                         <input type="hidden" name="edit_id" value="<?= $it['id'] ?>">
                                                         <div class="mb-3">
-                                                            <label class="fc-form-label">Type Name</label>
+                                                            <label class="fc-form-label">Type Name <span style="color:var(--fc-primary)">*</span></label>
                                                             <input type="text" name="edit_name" class="fc-form-control"
                                                                    value="<?= htmlspecialchars($it['name']) ?>" required>
                                                         </div>
@@ -182,12 +193,8 @@ $types = $conn->query("
                                                         </div>
                                                     </div>
                                                     <div class="modal-footer">
-                                                        <button type="button" class="fc-btn" style="background:#fff;color:var(--fc-text);border:1.5px solid var(--fc-border);" data-bs-dismiss="modal">
-                                                            Cancel
-                                                        </button>
-                                                        <button type="submit" class="fc-btn fc-btn-primary">
-                                                            <i class="bi bi-save-fill"></i> Save
-                                                        </button>
+                                                        <button type="button" class="fc-btn" style="background:#fff;color:var(--fc-text);border:1.5px solid var(--fc-border);" data-bs-dismiss="modal">Cancel</button>
+                                                        <button type="submit" class="fc-btn fc-btn-primary"><i class="bi bi-save-fill"></i> Save</button>
                                                     </div>
                                                 </form>
                                             </div>

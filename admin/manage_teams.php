@@ -5,7 +5,7 @@ require_once '../includes/functions.php';
 
 $msg = $err = '';
 if (isset($_GET['msg']) && $_GET['msg'] === 'deleted') {
-    $msg = 'Team deleted.';
+    $msg = 'Team archived successfully.';
 }
 
 // Add team
@@ -145,27 +145,32 @@ if (isset($_GET['toggle'])) {
     exit;
 }
 
-// // Delete team
-// if (isset($_GET['delete'])) {
-//     $id = (int) $_GET['delete'];
-//     $conn->query("DELETE FROM team_members WHERE team_id=$id");
-//     $conn->query("DELETE FROM teams WHERE team_id=$id");
-//     logActivity($_SESSION['user_id'], "Deleted team #$id");
-//     header("Location: manage_teams.php?msg=deleted");
-//     exit;
-// }
+// Soft delete team — marks as 'deleted' so data is preserved
+if (isset($_GET['delete'])) {
+    $id = (int) $_GET['delete'];
+    $stmt = $conn->prepare("UPDATE teams SET status = 'deleted' WHERE team_id = ?");
+    $stmt->bind_param("i", $id);
+    if ($stmt->execute()) {
+        logActivity($_SESSION['user_id'], "Soft-deleted team #$id");
+        header("Location: manage_teams.php?msg=deleted");
+        exit;
+    } else {
+        $err = 'Failed to delete team.';
+    }
+}
 
 if (isset($_GET['msg'])) {
     if ($_GET['msg'] === 'status_updated')
         $msg = 'Team status updated.';
     if ($_GET['msg'] === 'deleted')
-        $msg = 'Team deleted.';
+        $msg = 'Team archived successfully.';
 }
 
 $teams = $conn->query("
     SELECT t.*, COUNT(tm.team_mem_id) AS member_count
     FROM teams t
     LEFT JOIN team_members tm ON t.team_id = tm.team_id
+    WHERE t.status != 'deleted'
     GROUP BY t.team_id
     ORDER BY t.created_at DESC
 ");
@@ -364,7 +369,7 @@ while ($t = $teams->fetch_assoc()) {
                                                         <a class="dropdown-item text-danger" href="#"
                                                             style="padding: 10px 16px;"
                                                             onclick="confirmDelete(<?= $t['team_id'] ?>, '<?= htmlspecialchars(addslashes($t['team_name']), ENT_QUOTES) ?>'); return false;">
-                                                            <i class="bi bi-trash me-2"></i> Delete Team
+                                                            <i class="bi bi-archive me-2"></i> Archive Team
                                                         </a>
                                                     </li>
                                                 </ul>
@@ -502,8 +507,8 @@ while ($t = $teams->fetch_assoc()) {
                                 style="border-radius: 10px; font-weight: 600;"></a>
                             <a id="detailsDeleteBtn" href="#" class="btn btn-danger"
                                 style="border-radius: 10px; font-weight: 600;"
-                                onclick="return confirm('Are you sure you want to delete this team?');">
-                                <i class="bi bi-trash me-1"></i> Delete
+                                onclick="return confirm('Archive this team? It will be hidden but data is preserved.');">
+                                <i class="bi bi-archive me-1"></i> Archive
                             </a>
                         </div>
                     </div>
@@ -518,15 +523,15 @@ while ($t = $teams->fetch_assoc()) {
                         <div class="modal-body text-center" style="padding: 30px 25px;">
                             <div
                                 style="width: 56px; height: 56px; background: #fff0f0; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto;">
-                                <i class="bi bi-trash" style="font-size: 24px; color: #ff2d2d;"></i>
+                                <i class="bi bi-archive" style="font-size: 24px; color: #ff2d2d;"></i>
                             </div>
-                            <h6 style="font-weight: 800; margin-bottom: 8px;">Delete Team?</h6>
+                            <h6 style="font-weight: 800; margin-bottom: 8px;">Archive Team?</h6>
                             <p id="deleteConfirmText" style="color: #666; font-size: 14px; margin-bottom: 20px;"></p>
                             <div class="d-flex gap-2">
                                 <button class="btn btn-light w-100" data-bs-dismiss="modal"
                                     style="border-radius: 10px; font-weight: 600;">Cancel</button>
                                 <a id="deleteConfirmBtn" href="#" class="btn btn-danger w-100"
-                                    style="border-radius: 10px; font-weight: 600;">Delete</a>
+                                    style="border-radius: 10px; font-weight: 600;">Yes, Archive</a>
                             </div>
                         </div>
                     </div>
@@ -731,14 +736,14 @@ while ($t = $teams->fetch_assoc()) {
         }
         toggleBtn.href = `manage_teams.php?toggle=${id}`;
         deleteBtn.href = `manage_teams.php?delete=${id}`;
-        deleteBtn.onclick = function () { return confirm(`Delete team "${name}"? This action cannot be undone.`); };
+        deleteBtn.onclick = function () { return confirm(`Archive team "${name}"? The team will be hidden but can be restored later.`); };
 
         new bootstrap.Modal(document.getElementById('teamDetailsModal')).show();
     }
 
     // ── Confirm Delete ────────────────────────────────────────────────
     function confirmDelete(id, name) {
-        document.getElementById('deleteConfirmText').textContent = `Delete "${name}"? All members will also be removed. This cannot be undone.`;
+        document.getElementById('deleteConfirmText').textContent = `Archive "${name}"? The team will be hidden but data will be preserved.`;
         document.getElementById('deleteConfirmBtn').href = `manage_teams.php?delete=${id}`;
         new bootstrap.Modal(document.getElementById('deleteConfirmModal')).show();
     }

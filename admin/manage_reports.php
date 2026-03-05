@@ -4,8 +4,7 @@ require_once '../includes/db_connect.php';
 require_once '../includes/functions.php';
 
 $msg = '';
-$statusMap   = ['pending'=>1,'assigned'=>2,'responding'=>3,'resolved'=>4,'cancelled'=>5];
-$statusByID  = array_flip($statusMap);
+$statusMap  = ['pending'=>1,'assigned'=>2,'responding'=>3,'resolved'=>4,'cancelled'=>5];
 
 // Handle update
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_id'])) {
@@ -22,6 +21,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_id'])) {
 $filter = isset($_GET['status']) ? sanitize($_GET['status']) : '';
 $where  = ($filter && isset($statusMap[$filter])) ? "WHERE i.status_id = ".$statusMap[$filter] : '';
 
+// Pagination
+$per_page = 12;
+$page     = max(1, (int)($_GET['page'] ?? 1));
+
+$count_q = $conn->query("SELECT COUNT(*) c FROM incidents i $where");
+$total_count = (int)$count_q->fetch_assoc()['c'];
+$total_pages = max(1, ceil($total_count / $per_page));
+$offset = ($page - 1) * $per_page;
+
 $reports = $conn->query("
     SELECT i.*, it.name AS type_name, b.name AS barangay,
            u.full_name AS reporter, u.contact_number AS reporter_phone,
@@ -33,25 +41,25 @@ $reports = $conn->query("
     LEFT JOIN teams           t  ON i.assigned_team_id = t.team_id
     $where
     ORDER BY i.created_at DESC
+    LIMIT $per_page OFFSET $offset
 ");
-if (!$reports) die("Reports query failed: ".$conn->error);
+if (!$reports) die("Reports query failed: " . $conn->error);
 
-$teams_res = $conn->query("SELECT team_id AS id, team_name AS name FROM teams ORDER BY team_name");
+$teams_res = $conn->query("SELECT team_id AS id, team_name AS name FROM teams WHERE status='active' ORDER BY team_name");
 $teams_arr = [];
 if ($teams_res) while ($t = $teams_res->fetch_assoc()) $teams_arr[] = $t;
 
 // Count per status for tabs
 $cnt_res = $conn->query("SELECT status_id, COUNT(*) c FROM incidents GROUP BY status_id");
-$counts  = [];
+$counts = [];
 while ($c = $cnt_res->fetch_assoc()) $counts[$c['status_id']] = $c['c'];
 $total = array_sum($counts);
 
-// Status config
 $statusCfg = [
     1 => ['label'=>'Pending',    'color'=>'#f59e0b', 'bg'=>'rgba(245,158,11,.15)',  'icon'=>'bi-clock-fill'],
     2 => ['label'=>'Assigned',   'color'=>'#3b82f6', 'bg'=>'rgba(59,130,246,.15)',  'icon'=>'bi-person-check-fill'],
     3 => ['label'=>'Responding', 'color'=>'#8b5cf6', 'bg'=>'rgba(139,92,246,.15)',  'icon'=>'bi-activity'],
-    4 => ['label'=>'Resolved',   'color'=>'#21bf73', 'bg'=>'rgba(33,191,115,.15)',  'icon'=>'bi-patch-check-fill'],
+    4 => ['label'=>'Resolved',   'color'=>'#10b981', 'bg'=>'rgba(16,185,129,.15)',  'icon'=>'bi-patch-check-fill'],
     5 => ['label'=>'Cancelled',  'color'=>'#94a3b8', 'bg'=>'rgba(148,163,184,.15)', 'icon'=>'bi-x-circle-fill'],
 ];
 $typeIcons = [
@@ -67,14 +75,14 @@ function getTypeIcon($name, $icons) {
     return 'bi-exclamation-triangle-fill';
 }
 
-// Collect rows + evidence
 $all_rows = [];
 while ($r = $reports->fetch_assoc()) $all_rows[] = $r;
-$inc_ids = array_column($all_rows, 'id');
+
 $evidence_map = [];
-if (!empty($inc_ids)) {
+if (!empty($all_rows)) {
+    $inc_ids = array_column($all_rows, 'id');
     $ids_str = implode(',', $inc_ids);
-    $ev_res  = $conn->query("SELECT * FROM incident_evidence WHERE incident_id IN ($ids_str) ORDER BY uploaded_at ASC");
+    $ev_res = $conn->query("SELECT * FROM incident_evidence WHERE incident_id IN ($ids_str) ORDER BY uploaded_at ASC");
     if ($ev_res) while ($ev = $ev_res->fetch_assoc()) $evidence_map[$ev['incident_id']][] = $ev;
 }
 ?>
@@ -86,13 +94,17 @@ if (!empty($inc_ids)) {
 
         <div class="fc-topbar">
             <div class="fc-topbar-left">
-                <button class="fc-menu-btn" onclick="fcToggleSidebar()" style="display:block;"><i class="bi bi-list"></i></button>
+                <button class="fc-menu-btn" onclick="fcToggleSidebar()"><i class="bi bi-list"></i></button>
                 <div>
                     <div class="fc-page-title">Manage Reports</div>
                     <div class="fc-breadcrumb">Admin / Incident Reports</div>
                 </div>
             </div>
-            <div class="fc-topbar-right"></div>
+            <div class="fc-topbar-right no-print">
+                <button onclick="window.print()" class="fc-btn" style="background:#fff;border:1.5px solid var(--fc-border);color:var(--fc-text-2);font-size:13px;padding:8px 16px;">
+                    <i class="bi bi-printer-fill"></i> Print / Export
+                </button>
+            </div>
         </div>
 
         <div class="fc-content">
@@ -100,29 +112,27 @@ if (!empty($inc_ids)) {
             <div class="fc-alert fc-alert-success"><i class="bi bi-check-circle-fill"></i> <?= $msg ?></div>
             <?php endif; ?>
 
-            <!-- Filter tabs with counts -->
-            <div class="fc-filter-tabs" style="margin-bottom:24px;">
+            <!-- Filter tabs -->
+            <div class="fc-filter-tabs no-print">
                 <a href="?status=" class="fc-filter-tab <?= $filter==='' ? 'active':'' ?>">
                     All <span class="fc-tab-count"><?= $total ?></span>
                 </a>
                 <?php foreach (['pending'=>1,'assigned'=>2,'responding'=>3,'resolved'=>4,'cancelled'=>5] as $val=>$sid): ?>
                 <a href="?status=<?= $val ?>" class="fc-filter-tab <?= $filter===$val ? 'active':'' ?>">
                     <?= ucfirst($val) ?>
-                    <?php if (!empty($counts[$sid])): ?>
-                    <span class="fc-tab-count"><?= $counts[$sid] ?></span>
-                    <?php endif; ?>
+                    <?php if (!empty($counts[$sid])): ?><span class="fc-tab-count"><?= $counts[$sid] ?></span><?php endif; ?>
                 </a>
                 <?php endforeach; ?>
             </div>
 
             <?php if (empty($all_rows)): ?>
-            <div class="fc-empty" style="padding:80px 28px;">
-                <i class="bi bi-inbox"></i>
-                <h6>No incidents found</h6>
+            <div class="fc-card">
+                <div class="fc-empty" style="padding:80px 28px;">
+                    <i class="bi bi-inbox"></i><h6>No incidents found</h6>
+                </div>
             </div>
             <?php else: ?>
 
-            <!-- Card Grid -->
             <div class="ir-grid">
                 <?php foreach ($all_rows as $r):
                     $sid   = (int)$r['status_id'];
@@ -132,7 +142,6 @@ if (!empty($inc_ids)) {
                     $thumb = !empty($evs) ? $evs[0]['file_path'] : null;
                 ?>
                 <div class="ir-card" onclick="openAdminPanel(<?= $r['id'] ?>)">
-
                     <div class="ir-card-img">
                         <?php if ($thumb): ?>
                             <img src="../<?= htmlspecialchars($thumb) ?>" alt="evidence">
@@ -145,7 +154,6 @@ if (!empty($inc_ids)) {
                         </div>
                         <div class="ir-id-badge">#<?= $r['id'] ?></div>
                     </div>
-
                     <div class="ir-card-body">
                         <div class="ir-type-row">
                             <span class="ir-type-pill">
@@ -168,30 +176,45 @@ if (!empty($inc_ids)) {
                         <div class="ir-card-desc"><?= htmlspecialchars($r['description']) ?></div>
                         <?php endif; ?>
                     </div>
-
                     <div class="ir-card-footer">
                         <div class="ir-reporter">
                             <div class="ir-avatar"><?= strtoupper(substr($r['reporter'] ?? 'U', 0, 1)) ?></div>
                             <span><?= htmlspecialchars($r['reporter'] ?? 'Unknown') ?></span>
                         </div>
-                        <button class="fc-btn fc-btn-primary" style="font-size:12px;padding:7px 16px;" onclick="event.stopPropagation();openAdminPanel(<?= $r['id'] ?>)">
-                            View Details
+                        <button class="fc-btn fc-btn-primary no-print" style="font-size:12px;padding:7px 14px;" onclick="event.stopPropagation();openAdminPanel(<?= $r['id'] ?>)">
+                            Manage
                         </button>
                     </div>
                 </div>
                 <?php endforeach; ?>
             </div>
 
-            <div style="margin-top:22px;font-size:12.5px;color:var(--fc-muted);font-family:'Lexend',sans-serif;">
-                Showing <?= count($all_rows) ?> incident<?= count($all_rows)!==1?'s':'' ?>
+            <!-- Pagination -->
+            <?php if ($total_pages > 1): ?>
+            <div class="fc-pagination no-print">
+                <a href="?status=<?= $filter ?>&page=<?= $page-1 ?>" class="fc-page-btn <?= $page<=1?'disabled':'' ?>">
+                    <i class="bi bi-chevron-left"></i>
+                </a>
+                <?php for ($p = 1; $p <= $total_pages; $p++): ?>
+                <a href="?status=<?= $filter ?>&page=<?= $p ?>" class="fc-page-btn <?= $p===$page?'active':'' ?>"><?= $p ?></a>
+                <?php endfor; ?>
+                <a href="?status=<?= $filter ?>&page=<?= $page+1 ?>" class="fc-page-btn <?= $page>=$total_pages?'disabled':'' ?>">
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+                <span class="fc-page-info">Page <?= $page ?> of <?= $total_pages ?> &bull; <?= $total_count ?> total</span>
+            </div>
+            <?php endif; ?>
+
+            <div style="margin-top:14px;font-size:12px;color:var(--fc-muted);font-family:'Lexend',sans-serif;" class="no-print">
+                Showing <?= count($all_rows) ?> of <?= $total_count ?> incident<?= $total_count!==1?'s':'' ?>
             </div>
             <?php endif; ?>
         </div>
     </div>
 </div>
 
-<!-- ── Slide-in Panel Overlay ── -->
-<div class="ir-panel-overlay" id="panelOverlay" onclick="closeAdminPanel()"></div>
+<!-- Slide-in Panel Overlay -->
+<div class="ir-panel-overlay no-print" id="panelOverlay" onclick="closeAdminPanel()"></div>
 
 <?php foreach ($all_rows as $r):
     $sid   = (int)$r['status_id'];
@@ -200,9 +223,7 @@ if (!empty($inc_ids)) {
     $evs   = $evidence_map[$r['id']] ?? [];
     $thumb = !empty($evs) ? $evs[0]['file_path'] : null;
 ?>
-<div class="ir-panel" id="adminPanel<?= $r['id'] ?>">
-
-    <!-- Panel image header -->
+<div class="ir-panel no-print" id="adminPanel<?= $r['id'] ?>">
     <div class="ir-panel-img">
         <?php if ($thumb): ?>
             <img src="../<?= htmlspecialchars($thumb) ?>" alt="evidence">
@@ -212,7 +233,7 @@ if (!empty($inc_ids)) {
         <div class="ir-modal-img-overlay"></div>
         <button class="ir-modal-close" onclick="closeAdminPanel()"><i class="bi bi-x"></i></button>
         <div class="ir-modal-img-bottom">
-            <div style="display:flex;gap:8px;margin-bottom:6px;align-items:center;">
+            <div style="display:flex;gap:8px;margin-bottom:6px;flex-wrap:wrap;">
                 <span class="ir-status-badge" style="background:<?= $scfg['bg'] ?>;color:<?= $scfg['color'] ?>;border:1px solid <?= $scfg['color'] ?>40;position:static;">
                     <i class="bi <?= $scfg['icon'] ?>"></i> <?= $scfg['label'] ?>
                 </span>
@@ -228,14 +249,12 @@ if (!empty($inc_ids)) {
     </div>
 
     <div class="ir-panel-body">
-
-        <!-- Details -->
         <div class="ir-section-label">Incident Details</div>
         <div class="ir-detail-row"><span>Type</span><strong><?= htmlspecialchars($r['type_name'] ?? '—') ?></strong></div>
         <div class="ir-detail-row"><span>Barangay</span><strong><?= htmlspecialchars($r['barangay'] ?? '—') ?></strong></div>
         <div class="ir-detail-row"><span>Location</span><strong><?= htmlspecialchars($r['street_landmark'] ?? '—') ?></strong></div>
         <div class="ir-detail-row"><span>Reporter</span>
-            <div>
+            <div style="text-align:right;">
                 <strong><?= htmlspecialchars($r['reporter'] ?? '—') ?></strong>
                 <?php if ($r['reporter_phone']): ?>
                 <div style="font-size:11.5px;color:var(--fc-muted);"><?= htmlspecialchars($r['reporter_phone']) ?></div>
@@ -249,7 +268,6 @@ if (!empty($inc_ids)) {
         </div>
         <?php endif; ?>
 
-        <!-- Evidence -->
         <?php if (!empty($evs)): ?>
         <div style="margin-top:16px;">
             <div class="ir-section-label">Evidence Photos (<?= count($evs) ?>)</div>
@@ -263,14 +281,14 @@ if (!empty($inc_ids)) {
         </div>
         <?php endif; ?>
 
-        <!-- Update form -->
+        <!-- Update form with frontend validation -->
         <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--fc-border);">
             <div class="ir-section-label">Update Report</div>
-            <form method="POST">
+            <form method="POST" id="updateForm<?= $r['id'] ?>" onsubmit="return validateUpdate(<?= $r['id'] ?>)">
                 <input type="hidden" name="update_id" value="<?= $r['id'] ?>">
                 <div class="mb-3">
                     <label class="fc-form-label">Assign Response Team</label>
-                    <select name="team_id" class="fc-form-control">
+                    <select name="team_id" class="fc-form-control" id="team_<?= $r['id'] ?>">
                         <option value="">— Unassigned —</option>
                         <?php foreach ($teams_arr as $t): ?>
                         <option value="<?= $t['id'] ?>" <?= $r['assigned_team_id'] == $t['id'] ? 'selected' : '' ?>>
@@ -281,11 +299,14 @@ if (!empty($inc_ids)) {
                 </div>
                 <div class="mb-3">
                     <label class="fc-form-label">Update Status</label>
-                    <select name="status" class="fc-form-control">
+                    <select name="status" class="fc-form-control" id="status_<?= $r['id'] ?>">
                         <?php foreach (['pending','assigned','responding','resolved','cancelled'] as $s): ?>
                         <option value="<?= $s ?>" <?= ($statusMap[$s]??0)===$sid ? 'selected':'' ?>><?= ucfirst($s) ?></option>
                         <?php endforeach; ?>
                     </select>
+                    <div id="validErr<?= $r['id'] ?>" style="font-size:11.5px;color:var(--fc-danger);margin-top:4px;display:none;">
+                        ⚠ Please assign a team before setting status to Assigned or Responding.
+                    </div>
                 </div>
                 <div style="display:flex;gap:10px;">
                     <button type="button" class="fc-btn" style="flex:1;justify-content:center;background:#fff;border:1.5px solid var(--fc-border);color:var(--fc-text);" onclick="closeAdminPanel()">
@@ -311,6 +332,19 @@ function closeAdminPanel() {
     document.getElementById('panelOverlay').classList.remove('open');
     document.querySelectorAll('.ir-panel.open').forEach(p => p.classList.remove('open'));
     document.body.style.overflow = '';
+}
+
+// Frontend validation: warn if setting Assigned/Responding without a team
+function validateUpdate(id) {
+    const status  = document.getElementById('status_' + id).value;
+    const team    = document.getElementById('team_' + id).value;
+    const errBox  = document.getElementById('validErr' + id);
+    if ((status === 'assigned' || status === 'responding') && !team) {
+        errBox.style.display = 'block';
+        return false;
+    }
+    errBox.style.display = 'none';
+    return true;
 }
 </script>
 
