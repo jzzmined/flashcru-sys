@@ -23,16 +23,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_id'])) {
     }
 }
 
-// Handle Cancel (only pending reports)
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cancel_id'])) {
-    $cancel_id = (int)$_POST['cancel_id'];
-    $check = $conn->query("SELECT id FROM incidents WHERE id=$cancel_id AND user_id=$uid AND status_id=1");
+// Handle Cancel REQUEST (user requests cancellation — admin must approve)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cancel_request_id'])) {
+    $cancel_id     = (int)$_POST['cancel_request_id'];
+    $cancel_reason = sanitize($_POST['cancel_reason'] ?? '');
+
+    // Only allow if report belongs to this user AND is pending (not yet assigned/responding)
+    $check = $conn->query("SELECT id, status_id, cancel_request FROM incidents WHERE id=$cancel_id AND user_id=$uid");
     if ($check && $check->num_rows > 0) {
-        $conn->query("UPDATE incidents SET status_id=5, updated_at=NOW() WHERE id=$cancel_id");
-        logActivity($uid, "Cancelled incident report #$cancel_id");
-        $msg = "Report #$cancel_id has been cancelled.";
+        $row = $check->fetch_assoc();
+        if (in_array((int)$row['status_id'], [2, 3])) {
+            $msg      = "Cannot request cancellation — a team is already responding to this report. Contact the admin directly.";
+            $msg_type = 'error';
+        } elseif ($row['cancel_request'] === 'pending') {
+            $msg      = "You already have a pending cancellation request for Report #$cancel_id.";
+            $msg_type = 'error';
+        } elseif ((int)$row['status_id'] === 5) {
+            $msg      = "Report #$cancel_id is already cancelled.";
+            $msg_type = 'error';
+        } elseif ((int)$row['status_id'] === 4) {
+            $msg      = "Report #$cancel_id is already resolved.";
+            $msg_type = 'error';
+        } else {
+            $reason_sql = $conn->real_escape_string($cancel_reason);
+            $conn->query("UPDATE incidents SET cancel_request='pending', cancel_reason='$reason_sql', updated_at=NOW() WHERE id=$cancel_id AND user_id=$uid");
+            logActivity($uid, "Requested cancellation for report #$cancel_id" . ($cancel_reason ? ": $cancel_reason" : ''));
+            $msg = "Cancellation request submitted for Report #$cancel_id. Please wait for admin approval.";
+        }
     } else {
-        $msg      = "You can only cancel pending reports.";
+        $msg      = "Report not found.";
         $msg_type = 'error';
     }
 }
@@ -54,7 +73,8 @@ $total_pages = max(1, ceil($total_count / $per_page));
 // FIX: Removed broken LEFT JOIN report_status (table doesn't exist)
 $reports = $conn->query("
     SELECT i.*, it.name AS type_name, t.team_name,
-           b.name AS barangay
+           b.name AS barangay,
+           i.cancel_request, i.cancel_reason, i.cancel_admin_note
     FROM incidents i
     LEFT JOIN incident_types it ON i.incident_type_id = it.id
     LEFT JOIN teams           t  ON i.assigned_team_id = t.team_id
@@ -386,24 +406,39 @@ if (!empty($all_rows)) {
     </div>
 </div>
 
-<!-- Cancel Modals -->
-<div class="modal fade" id="cancelModal<?= $r['id'] ?>" tabindex="-1">
-    <div class="modal-dialog modal-sm">
+<!-- Cancel REQUEST Modals (user requests, admin approves) -->
+<div class="modal fade" id="cancelReqModal<?= $r['id'] ?>" tabindex="-1">
+    <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title"><i class="bi bi-exclamation-triangle-fill" style="color:var(--fc-danger);margin-right:8px;"></i> Cancel Report</h5>
+                <h5 class="modal-title">
+                    <i class="bi bi-send-fill" style="color:#f59e0b;margin-right:8px;"></i>
+                    Request Cancellation — Report #<?= $r['id'] ?>
+                </h5>
                 <button class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body" style="font-size:13.5px;">
-                Cancel <strong>Report #<?= $r['id'] ?></strong>? This cannot be undone.
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="fc-btn" style="background:#fff;color:var(--fc-text);border:1.5px solid var(--fc-border);" data-bs-dismiss="modal">Keep It</button>
-                <form method="POST" style="display:inline;">
-                    <input type="hidden" name="cancel_id" value="<?= $r['id'] ?>">
-                    <button type="submit" class="fc-btn fc-btn-danger"><i class="bi bi-x-circle-fill"></i> Yes, Cancel</button>
-                </form>
-            </div>
+            <form method="POST">
+                <div class="modal-body">
+                    <input type="hidden" name="cancel_request_id" value="<?= $r['id'] ?>">
+                    <div style="background:#fff7ed;border:1.5px solid #fed7aa;border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:13px;color:#92400e;">
+                        <i class="bi bi-info-circle-fill" style="margin-right:6px;"></i>
+                        Your cancellation request will be sent to the admin for review. Your report will <strong>not</strong> be cancelled until the admin approves it.
+                    </div>
+                    <label class="fc-form-label">Reason for Cancellation <span style="color:var(--fc-primary)">*</span></label>
+                    <textarea name="cancel_reason" class="fc-form-control" rows="3"
+                              placeholder="e.g. False alarm, situation resolved on our own, wrong location submitted..."
+                              required style="resize:none;"></textarea>
+                    <div style="font-size:11.5px;color:var(--fc-muted);margin-top:5px;">Be specific so the admin can review your request quickly.</div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="fc-btn" style="background:#fff;color:var(--fc-text);border:1.5px solid var(--fc-border);" data-bs-dismiss="modal">
+                        Never Mind
+                    </button>
+                    <button type="submit" class="fc-btn fc-btn-primary">
+                        <i class="bi bi-send-fill"></i> Submit Request
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -422,10 +457,10 @@ function openEditModal(id) {
     document.body.style.overflow = '';
     new bootstrap.Modal(document.getElementById('editModal' + id)).show();
 }
-function openCancelModal(id) {
+function openCancelRequestModal(id) {
     document.querySelectorAll('.ir-modal-overlay.open').forEach(m => { m.classList.remove('open'); });
     document.body.style.overflow = '';
-    new bootstrap.Modal(document.getElementById('cancelModal' + id)).show();
+    new bootstrap.Modal(document.getElementById('cancelReqModal' + id)).show();
 }
 
 // Notification toast (checks for status changes every 30s)

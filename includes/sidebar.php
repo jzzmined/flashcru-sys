@@ -6,14 +6,26 @@ $role    = $_SESSION['role'] ?? 'user';
 $uname   = $_SESSION['name'] ?? 'User';
 $current = basename($_SERVER['PHP_SELF']);
 $folder  = basename(dirname($_SERVER['PHP_SELF']));
+
+// Load profile picture from DB
+$sidebar_pic = null;
+if (isset($_SESSION['user_id'])) {
+    global $conn;
+    if (!isset($conn)) require_once $base . 'includes/db_connect.php';
+    $sid  = (int)$_SESSION['user_id'];
+    $sres = $conn->query("SELECT profile_picture FROM users WHERE user_id=$sid");
+    if ($sres) {
+        $srow = $sres->fetch_assoc();
+        if (!empty($srow['profile_picture'])) {
+            $sidebar_pic = $base . $srow['profile_picture'];
+        }
+    }
+}
 ?>
 <aside class="fc-sidebar" id="fcSidebar">
 
-    <!-- Brand -->
     <div class="fc-sidebar-brand">
-        <div class="fc-brand-icon">
-            <i class="bi bi-lightning-charge-fill"></i>
-        </div>
+        <div class="fc-brand-icon"><i class="bi bi-lightning-charge-fill"></i></div>
         <div class="fc-logo-text">
             <div class="fc-brand-name">FlashCru</div>
             <div class="fc-brand-sub">Response System</div>
@@ -23,102 +35,86 @@ $folder  = basename(dirname($_SERVER['PHP_SELF']));
     <nav class="fc-sidebar-nav">
 
         <?php if ($role === 'admin'): ?>
-
-        <!-- ── ADMIN NAV ── -->
         <div class="fc-nav-label">MAIN</div>
         <a href="<?= $base ?>admin/dashboard.php"
-           class="fc-nav-item <?= ($current === 'dashboard.php' && $folder === 'admin') ? 'active' : '' ?>">
-            <i class="bi bi-grid-1x2-fill"></i>
-            <span class="fc-sidebar-label">Dashboard</span>
+           class="fc-nav-item <?= ($current==='dashboard.php' && $folder==='admin') ? 'active':'' ?>">
+            <i class="bi bi-grid-1x2-fill"></i><span class="fc-sidebar-label">Dashboard</span>
         </a>
 
         <div class="fc-nav-label">MANAGEMENT</div>
         <a href="<?= $base ?>admin/manage_reports.php"
-           class="fc-nav-item <?= $current === 'manage_reports.php' ? 'active' : '' ?>">
-            <i class="bi bi-file-earmark-text-fill"></i>
-            <span class="fc-sidebar-label">Incident Reports</span>
+           class="fc-nav-item <?= $current==='manage_reports.php' ? 'active':'' ?>">
+            <i class="bi bi-file-earmark-text-fill"></i><span class="fc-sidebar-label">Incident Reports</span>
         </a>
         <a href="<?= $base ?>admin/manage_teams.php"
-           class="fc-nav-item <?= $current === 'manage_teams.php' ? 'active' : '' ?>">
-            <i class="bi bi-shield-fill-exclamation"></i>
-            <span class="fc-sidebar-label">Response Teams</span>
+           class="fc-nav-item <?= $current==='manage_teams.php' ? 'active':'' ?>">
+            <i class="bi bi-shield-fill-exclamation"></i><span class="fc-sidebar-label">Response Teams</span>
         </a>
         <a href="<?= $base ?>admin/manage_incident_types.php"
-           class="fc-nav-item <?= $current === 'manage_incident_types.php' ? 'active' : '' ?>">
-            <i class="bi bi-tags-fill"></i>
-            <span class="fc-sidebar-label">Incident Types</span>
+           class="fc-nav-item <?= $current==='manage_incident_types.php' ? 'active':'' ?>">
+            <i class="bi bi-tags-fill"></i><span class="fc-sidebar-label">Incident Types</span>
         </a>
         <a href="<?= $base ?>admin/manage_users.php"
-           class="fc-nav-item <?= $current === 'manage_users.php' ? 'active' : '' ?>">
-            <i class="bi bi-people-fill"></i>
-            <span class="fc-sidebar-label">Manage Users</span>
+           class="fc-nav-item <?= $current==='manage_users.php' ? 'active':'' ?>">
+            <i class="bi bi-people-fill"></i><span class="fc-sidebar-label">Manage Users</span>
         </a>
         <a href="<?= $base ?>admin/manage_barangays.php"
-           class="fc-nav-item <?= $current === 'manage_barangays.php' ? 'active' : '' ?>">
-            <i class="bi bi-geo-alt-fill"></i>
-            <span class="fc-sidebar-label">Barangays</span>
+           class="fc-nav-item <?= $current==='manage_barangays.php' ? 'active':'' ?>">
+            <i class="bi bi-geo-alt-fill"></i><span class="fc-sidebar-label">Barangays</span>
         </a>
 
         <div class="fc-nav-label">ACCOUNT</div>
-        <a href="<?= $base ?>admin/activity_logs.php"
-           class="fc-nav-item <?= $current === 'activity_logs.php' ? 'active' : '' ?>">
-            <i class="bi bi-journal-text"></i>
-            <span class="fc-sidebar-label">Activity Logs</span>
-        </a>
         <a href="<?= $base ?>admin/admin_profile.php"
-           class="fc-nav-item <?= $current === 'admin_profile.php' ? 'active' : '' ?>">
-            <i class="bi bi-person-circle"></i>
-            <span class="fc-sidebar-label">My Profile</span>
+           class="fc-nav-item <?= $current==='admin_profile.php' ? 'active':'' ?>">
+            <i class="bi bi-person-circle"></i><span class="fc-sidebar-label">My Profile</span>
         </a>
         <a href="<?= $base ?>logout.php" class="fc-nav-item fc-nav-danger">
-            <i class="bi bi-box-arrow-left"></i>
-            <span class="fc-sidebar-label">Logout</span>
+            <i class="bi bi-box-arrow-left"></i><span class="fc-sidebar-label">Logout</span>
         </a>
 
         <?php else: ?>
-
-        <!-- ── USER NAV ── -->
         <div class="fc-nav-label">MAIN</div>
         <a href="<?= $base ?>user/dashboard.php"
-           class="fc-nav-item <?= ($current === 'dashboard.php' && $folder === 'user') ? 'active' : '' ?>">
-            <i class="bi bi-grid-1x2-fill"></i>
-            <span class="fc-sidebar-label">Dashboard</span>
+           class="fc-nav-item <?= ($current==='dashboard.php' && $folder==='user') ? 'active':'' ?>">
+            <i class="bi bi-grid-1x2-fill"></i><span class="fc-sidebar-label">Dashboard</span>
         </a>
 
         <div class="fc-nav-label">REPORTS</div>
         <a href="<?= $base ?>user/report_incident.php"
-           class="fc-nav-item <?= $current === 'report_incident.php' ? 'active' : '' ?>">
-            <i class="bi bi-exclamation-triangle-fill"></i>
-            <span class="fc-sidebar-label">Report Incident</span>
+           class="fc-nav-item <?= $current==='report_incident.php' ? 'active':'' ?>">
+            <i class="bi bi-exclamation-triangle-fill"></i><span class="fc-sidebar-label">Report Incident</span>
         </a>
         <a href="<?= $base ?>user/my_reports.php"
-           class="fc-nav-item <?= $current === 'my_reports.php' ? 'active' : '' ?>">
-            <i class="bi bi-clock-history"></i>
-            <span class="fc-sidebar-label">My Reports</span>
+           class="fc-nav-item <?= $current==='my_reports.php' ? 'active':'' ?>">
+            <i class="bi bi-clock-history"></i><span class="fc-sidebar-label">My Reports</span>
         </a>
 
         <div class="fc-nav-label">ACCOUNT</div>
         <a href="<?= $base ?>user/user_profile.php"
-           class="fc-nav-item <?= $current === 'user_profile.php' ? 'active' : '' ?>">
-            <i class="bi bi-person-circle"></i>
-            <span class="fc-sidebar-label">My Profile</span>
+           class="fc-nav-item <?= $current==='user_profile.php' ? 'active':'' ?>">
+            <i class="bi bi-person-circle"></i><span class="fc-sidebar-label">My Profile</span>
         </a>
         <a href="<?= $base ?>logout.php" class="fc-nav-item fc-nav-danger">
-            <i class="bi bi-box-arrow-left"></i>
-            <span class="fc-sidebar-label">Logout</span>
+            <i class="bi bi-box-arrow-left"></i><span class="fc-sidebar-label">Logout</span>
         </a>
-
         <?php endif; ?>
+
     </nav>
 
-    <!-- Sidebar footer user info -->
+    <!-- Sidebar footer: shows profile picture if uploaded -->
     <div class="fc-sidebar-user">
+        <?php if ($sidebar_pic): ?>
+        <img src="<?= htmlspecialchars($sidebar_pic) ?>" alt="<?= htmlspecialchars($uname) ?>"
+             style="width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid rgba(255,255,255,.15);">
+        <?php else: ?>
         <div class="fc-user-avatar"><?= strtoupper(substr($uname, 0, 1)) ?></div>
+        <?php endif; ?>
         <div class="fc-user-info fc-sidebar-label">
             <div class="fc-user-name"><?= htmlspecialchars($uname) ?></div>
             <div class="fc-user-role"><?= ucfirst($role) ?></div>
         </div>
     </div>
+
 </aside>
 
 <div class="fc-overlay" id="fcOverlay" onclick="fcCloseSidebar()"></div>
