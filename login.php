@@ -20,12 +20,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($result->num_rows === 1) {
         $user = $result->fetch_assoc();
         if (password_verify($password, $user['password'])) {
-            $_SESSION['user_id'] = $user['user_id'];
-            $_SESSION['name']    = $user['full_name'];
-            $_SESSION['email']   = $user['email'];
-            $_SESSION['role']    = 'user';
-            logActivity($user['user_id'], 'User logged in');
-            redirect('user/dashboard.php');
+            if ($user['role'] === 'admin') {
+                $error = 'This is a user login only. Please use the Admin login page.';
+            } else {
+                $_SESSION['user_id'] = $user['user_id'];
+                $_SESSION['name']    = $user['full_name'];
+                $_SESSION['email']   = $user['email'];
+                $_SESSION['role']    = 'user';
+                logActivity($user['user_id'], 'User logged in');
+                redirect('user/dashboard.php');
+            }
         } else {
             $error = 'Incorrect password. Please try again.';
         }
