@@ -37,7 +37,7 @@ $firstname = explode(' ', $_SESSION['name'])[0];
         <!-- TOPBAR -->
         <div class="fc-topbar">
             <div class="fc-topbar-left">
-                <button class="fc-menu-btn" onclick="fcOpenSidebar()">
+                <button class="fc-menu-btn" onclick="fcToggleSidebar()">
                     <i class="bi bi-list"></i>
                 </button>
                 <div>

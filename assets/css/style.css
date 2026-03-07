@@ -879,3 +879,7 @@ body.sidebar-collapsed .fc-main { margin-left: 68px; }
   .ir-grid { grid-template-columns: 1fr; }
   .fc-content { padding: 14px 12px; }
 }
+
+.fc-filter-tabs {
+    flex-wrap: wrap;
+}

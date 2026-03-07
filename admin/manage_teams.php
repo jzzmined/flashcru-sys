@@ -390,9 +390,11 @@ while ($t = $teams->fetch_assoc()) {
                 </div>
             </div>
 
-            <?php include '../includes/footer.php'; ?>
+        </div><!-- /fc-content -->
+    </div><!-- /fc-main -->
+</div><!-- /fc-app -->
 
-            <!-- ===== Modal: Add Team ===== -->
+<!-- ===== Modal: Add Team ===== -->
             <div class="modal fade" id="addTeamModal" tabindex="-1" aria-hidden="true">
                 <div class="modal-dialog modal-dialog-centered">
                     <div class="modal-content"
@@ -637,9 +639,6 @@ while ($t = $teams->fetch_assoc()) {
                 </div>
             </div>
 
-        </div><!-- /fc-content -->
-    </div><!-- /fc-main -->
-</div><!-- /fc-app -->
 
 <script>
     // ── Add Member Rows ──────────────────────────────────────────────
@@ -871,3 +870,5 @@ while ($t = $teams->fetch_assoc()) {
         });
     }
 </script>
+
+<?php include '../includes/footer.php'; ?>

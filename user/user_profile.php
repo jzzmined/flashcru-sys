@@ -135,7 +135,7 @@ $pic_url = !empty($user['profile_picture'])
     <div class="fc-main">
         <div class="fc-topbar">
             <div class="fc-topbar-left">
-                <button class="fc-menu-btn" onclick="fcOpenSidebar()"><i class="bi bi-list"></i></button>
+                <button class="fc-menu-btn" onclick="fcToggleSidebar()"><i class="bi bi-list"></i></button>
                 <div>
                     <div class="fc-page-title">My Profile</div>
                     <div class="fc-breadcrumb">Account / Profile Settings</div>

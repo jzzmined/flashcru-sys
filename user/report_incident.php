@@ -65,7 +65,7 @@ $barangays = $conn->query("SELECT id, name FROM barangays ORDER BY name");
     <div class="fc-main">
         <div class="fc-topbar">
             <div class="fc-topbar-left">
-                <button class="fc-menu-btn" onclick="fcOpenSidebar()"><i class="bi bi-list"></i></button>
+                <button class="fc-menu-btn" onclick="fcToggleSidebar()"><i class="bi bi-list"></i></button>
                 <div>
                     <div class="fc-page-title">Report Incident</div>
                     <div class="fc-breadcrumb">User / Report New Incident</div>

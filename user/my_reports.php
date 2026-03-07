@@ -129,7 +129,7 @@ if (!empty($all_rows)) {
     <div class="fc-main">
         <div class="fc-topbar">
             <div class="fc-topbar-left">
-                <button class="fc-menu-btn" onclick="fcOpenSidebar()"><i class="bi bi-list"></i></button>
+                <button class="fc-menu-btn" onclick="fcToggleSidebar()"><i class="bi bi-list"></i></button>
                 <div>
                     <div class="fc-page-title">My Reports</div>
                     <div class="fc-breadcrumb">My Incident Reports</div>
@@ -157,7 +157,7 @@ if (!empty($all_rows)) {
             </div>
 
             <!-- FIX: Filter tab labels now match DB status names -->
-            <div class="fc-filter-tabs">
+            <div class="fc-filter-tabs no-print">
                 <a href="?status=" class="fc-filter-tab <?= $filter==='' ? 'active' : '' ?>">
                     All <span class="fc-tab-count"><?= $total ?></span>
                 </a>
