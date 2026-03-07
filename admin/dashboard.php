@@ -99,7 +99,7 @@ while ($r = $by_status->fetch_assoc()) {
                     <div style="font-family:Lexend,sans-serif;font-weight:800;font-size:19px;color:#fff;margin-bottom:4px;">FlashCru Control Center</div>
                     <div style="color:rgba(255,255,255,.45);font-size:12px;"><?= date('l, F j, Y \a\t g:i A') ?></div>
                 </div>
-                <div style="display:flex;gap:10px;flex-wrap:wrap;position:relative;z-index:1;no-print">
+                <div style="display:flex;gap:10px;flex-wrap:wrap;position:relative;z-index:1;" class="no-print">
                     <a href="manage_reports.php" class="fc-btn fc-btn-primary no-print" style="font-size:13px;padding:10px 20px;">
                         <i class="bi bi-file-earmark-text-fill"></i> View Reports
                     </a>
@@ -207,6 +207,12 @@ while ($r = $by_status->fetch_assoc()) {
                                 <i class="bi bi-clock-history" style="color:var(--fc-primary)"></i> Latest Incidents
                             </div>
                             <a href="manage_reports.php" class="fc-btn fc-btn-primary no-print" style="font-size:11.5px;padding:6px 14px;">View All</a>
+                        </div>
+                        <div style="padding:10px 16px 0;border-bottom:1px solid var(--fc-border);" class="no-print">
+                            <input type="text" id="dashIncidentSearch" class="fc-form-control"
+                                   placeholder="Filter by type, reporter, barangay..."
+                                   style="font-size:12.5px;padding:7px 12px;"
+                                   oninput="filterDashTable(this.value)">
                         </div>
                         <div class="fc-log-scroll">
                             <?php if ($recent->num_rows === 0): ?>
@@ -351,6 +357,13 @@ new Chart(document.getElementById('typeChart'), {
         }
     }
 });
+// ── Dashboard incident table quick filter ──
+function filterDashTable(q) {
+    q = q.toLowerCase();
+    document.querySelectorAll('.fc-table tbody tr').forEach(row => {
+        row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+}
 </script>
 
 <?php include '../includes/footer.php'; ?>

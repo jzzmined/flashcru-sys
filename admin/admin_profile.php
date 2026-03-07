@@ -35,8 +35,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload_photo'])) {
             $filepath = 'assets/uploads/profiles/' . $filename;
 
             if (move_uploaded_file($_FILES['profile_picture']['tmp_name'], $upload_dir . $filename)) {
-                $fp   = $conn->real_escape_string($filepath);
-                $conn->query("UPDATE users SET profile_picture='$fp' WHERE user_id=$uid");
+                $stmt = $conn->prepare("UPDATE users SET profile_picture=? WHERE user_id=?");
+                $stmt->bind_param("si", $filepath, $uid);
+                $stmt->execute();
                 logActivity($uid, "Updated profile picture");
                 $msg = 'Profile picture updated successfully.';
                 $admin = $conn->query("SELECT * FROM users WHERE user_id=$uid")->fetch_assoc();

@@ -769,6 +769,18 @@ body.sidebar-collapsed .fc-main { margin-left: 68px; }
 .ir-detail-row span { color: var(--fc-muted); flex-shrink: 0; }
 .ir-detail-row strong { color: var(--fc-dark); font-weight: 600; text-align: right; }
 
+/* ── badge-status (used in manage_users) ── */
+.badge-status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 11px; border-radius: 100px;
+  font-size: 11.5px; font-weight: 700;
+  font-family: 'Lexend', sans-serif; white-space: nowrap;
+}
+
+/* ── fc-btn-info ── */
+.fc-btn-info { background: var(--fc-info); color: #fff; }
+.fc-btn-info:hover { background: #1d4ed8; color: #fff; transform: translateY(-1px); }
+
 /* ── Timeline ──────────────────────────────────────── */
 .ir-timeline { display: flex; align-items: flex-start; justify-content: space-between; position: relative; padding: 0 0 4px; }
 .ir-timeline::before { content: ''; position: absolute; top: 13px; left: 14px; right: 14px; height: 2px; background: var(--fc-border-2); z-index: 0; }
@@ -883,3 +895,24 @@ body.sidebar-collapsed .fc-main { margin-left: 68px; }
 .fc-filter-tabs {
     flex-wrap: wrap;
 } 
+/* ── Responsive table: show labels on mobile ── */
+@media (max-width: 640px) {
+  .fc-table thead { display: none; }
+  .fc-table, .fc-table tbody, .fc-table tr, .fc-table td { display: block; width: 100%; }
+  .fc-table tr { margin-bottom: 12px; border: 1px solid var(--fc-border); border-radius: var(--fc-radius-sm); overflow: hidden; }
+  .fc-table td { display: flex; justify-content: space-between; align-items: center; padding: 8px 14px; border-bottom: 1px solid var(--fc-border-2); font-size: 12.5px; }
+  .fc-table td::before { content: attr(data-label); font-weight: 700; color: var(--fc-muted); font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; flex-shrink: 0; margin-right: 10px; }
+  .fc-table td:last-child { border-bottom: none; }
+  .ir-grid { grid-template-columns: 1fr; }
+}
+
+/* ── Toast notification ── */
+#fc-toast {
+  position: fixed; bottom: 28px; right: 28px; z-index: 9999;
+  background: var(--fc-dark); color: #fff;
+  padding: 12px 20px; border-radius: 10px;
+  font-size: 13.5px; font-family: 'Lexend', sans-serif; font-weight: 600;
+  box-shadow: var(--fc-shadow-xl); display: none;
+  animation: toastIn .25s cubic-bezier(.4,0,.2,1);
+}
+@keyframes toastIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }

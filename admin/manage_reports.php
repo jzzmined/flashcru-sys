@@ -8,29 +8,33 @@ $statusMap  = ['pending'=>1,'assigned'=>2,'responding'=>3,'resolved'=>4,'cancell
 
 // Handle update
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_id'])) {
-    $id       = (int)$_POST['update_id'];
-    $status   = sanitize($_POST['status']);
-    $team_id  = !empty($_POST['team_id']) ? (int)$_POST['team_id'] : null;
-    $t_sql    = $team_id ? $team_id : 'NULL';
+    $id        = (int)$_POST['update_id'];
+    $status    = sanitize($_POST['status']);
+    $team_id   = !empty($_POST['team_id']) ? (int)$_POST['team_id'] : null;
     $status_id = $statusMap[$status] ?? 1;
-    $conn->query("UPDATE incidents SET status_id=$status_id, assigned_team_id=$t_sql, updated_at=NOW() WHERE id=$id");
+    $stmt = $conn->prepare("UPDATE incidents SET status_id=?, assigned_team_id=?, updated_at=NOW() WHERE id=?");
+    $stmt->bind_param("iii", $status_id, $team_id, $id);
+    $stmt->execute();
     logActivity($_SESSION['user_id'], "Updated incident #$id → status: $status");
     $msg = "Incident #$id updated successfully.";
 }
 
 // Handle cancel request approval / rejection
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cancel_action'])) {
-    $id          = (int)$_POST['cancel_incident_id'];
-    $action      = $_POST['cancel_action'] === 'approve' ? 'approve' : 'reject';
-    $admin_note  = sanitize($_POST['cancel_admin_note'] ?? '');
+    $id         = (int)$_POST['cancel_incident_id'];
+    $action     = $_POST['cancel_action'] === 'approve' ? 'approve' : 'reject';
+    $admin_note = sanitize($_POST['cancel_admin_note'] ?? '');
 
     if ($action === 'approve') {
-        $conn->query("UPDATE incidents SET status_id=5, cancel_request='approved', cancel_admin_note='$admin_note', updated_at=NOW() WHERE id=$id");
+        $stmt = $conn->prepare("UPDATE incidents SET status_id=5, cancel_request='approved', cancel_admin_note=?, updated_at=NOW() WHERE id=?");
+        $stmt->bind_param("si", $admin_note, $id);
+        $stmt->execute();
         logActivity($_SESSION['user_id'], "Approved cancellation request for incident #$id");
         $msg = "Cancellation approved — Report #$id has been cancelled.";
     } else {
-        $note_sql = $conn->real_escape_string($admin_note);
-        $conn->query("UPDATE incidents SET cancel_request='rejected', cancel_admin_note='$note_sql', updated_at=NOW() WHERE id=$id");
+        $stmt = $conn->prepare("UPDATE incidents SET cancel_request='rejected', cancel_admin_note=?, updated_at=NOW() WHERE id=?");
+        $stmt->bind_param("si", $admin_note, $id);
+        $stmt->execute();
         logActivity($_SESSION['user_id'], "Rejected cancellation request for incident #$id");
         $msg = "Cancellation request for Report #$id has been rejected.";
     }
