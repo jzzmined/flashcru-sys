@@ -1,10 +1,10 @@
 /* =====================================================
    FLASHCRU DESIGN SYSTEM — style.css v2
    Primary  : #e61e1e  |  Success: #21BF73
-   Fonts    : Lexend (headings) | Inter (body)
+   Fonts    : Lexend (all)
    ===================================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Lexend:wght@400;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800&display=swap');
 
 :root {
   --fc-primary      : #e61e1e;
@@ -45,7 +45,7 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-  font-family: 'Inter', 'Roboto', sans-serif;
+  font-family: 'Lexend', sans-serif;
   background: var(--fc-bg);
   color: var(--fc-text);
   font-size: 14px;
@@ -370,7 +370,7 @@ a { text-decoration: none; color: inherit; }
   font-size: 14px; color: var(--fc-text);
   background: #fafbff; outline: none;
   transition: var(--fc-transition);
-  font-family: 'Inter', sans-serif;
+  font-family: 'Lexend', sans-serif;
 }
 .fc-form-control:focus { border-color: var(--fc-primary); box-shadow: 0 0 0 3px var(--fc-primary-glow); background: #fff; }
 .fc-form-control::placeholder { color: #c0cce0; }
@@ -686,7 +686,7 @@ body.sidebar-collapsed .fc-main { margin-left: 68px; }
   width: 100%; border: 1.5px solid var(--fc-border); border-radius: var(--fc-radius-sm);
   padding: 9px 14px 9px 38px; font-size: 13.5px;
   color: var(--fc-text); background: var(--fc-card-bg);
-  outline: none; transition: var(--fc-transition); font-family: 'Inter', sans-serif;
+  outline: none; transition: var(--fc-transition); font-family: 'Lexend', sans-serif;
 }
 .fc-search-input::placeholder { color: var(--fc-muted); }
 .fc-search-input:focus { border-color: var(--fc-primary); box-shadow: 0 0 0 3px var(--fc-primary-glow); }
@@ -882,4 +882,4 @@ body.sidebar-collapsed .fc-main { margin-left: 68px; }
 
 .fc-filter-tabs {
     flex-wrap: wrap;
-}
+} 

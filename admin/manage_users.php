@@ -9,7 +9,7 @@ $msg = $err = '';
 if (isset($_GET['toggle'])) {
     $uid    = (int)$_GET['toggle'];
     $newst  = $_GET['to'] === 'active' ? 'active' : 'inactive';
-    $conn->query("UPDATE users SET status='$newst' WHERE user_id=$uid AND role='user'");
+    $conn->query("UPDATE users SET status='$newst' WHERE user_id=$uid AND role=''");
     logActivity($_SESSION['user_id'], "Set user #$uid status to $newst");
     $msg = "User status updated to " . ucfirst($newst) . ".";
 }
@@ -21,7 +21,7 @@ if (isset($_GET['delete'])) {
     if ($used > 0) {
         $err = "Cannot delete — this user has $used incident report(s). Deactivate them instead.";
     } else {
-        $conn->query("DELETE FROM users WHERE user_id=$uid AND role='user'");
+        $conn->query("DELETE FROM users WHERE user_id=$uid AND role=''");
         logActivity($_SESSION['user_id'], "Deleted user #$uid");
         $msg = "User deleted.";
     }
@@ -31,7 +31,7 @@ if (isset($_GET['delete'])) {
 $search  = sanitize($_GET['search'] ?? '');
 $status_f = sanitize($_GET['status'] ?? '');
 
-$where = "WHERE u.role = 'user'";
+$where = "WHERE u.role = ''";
 if ($search)   $where .= " AND (u.full_name LIKE '%$search%' OR u.email LIKE '%$search%' OR u.contact_number LIKE '%$search%')";
 if ($status_f) $where .= " AND u.status = '$status_f'";
 
@@ -60,8 +60,8 @@ $all_users = [];
 while ($r = $users_res->fetch_assoc()) $all_users[] = $r;
 
 // Counts for filter tabs
-$cnt_active   = (int)$conn->query("SELECT COUNT(*) c FROM users WHERE role='user' AND status='active'")->fetch_assoc()['c'];
-$cnt_inactive = (int)$conn->query("SELECT COUNT(*) c FROM users WHERE role='user' AND status='inactive'")->fetch_assoc()['c'];
+$cnt_active   = (int)$conn->query("SELECT COUNT(*) c FROM users WHERE role='' AND status='active'")->fetch_assoc()['c'];
+$cnt_inactive = (int)$conn->query("SELECT COUNT(*) c FROM users WHERE role='' AND status='inactive'")->fetch_assoc()['c'];
 $cnt_total    = $cnt_active + $cnt_inactive;
 ?>
 <?php include '../includes/header.php'; ?>
