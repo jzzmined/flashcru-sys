@@ -76,8 +76,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
             <div class="mb-4">
                 <label class="fc-form-label">Password</label>
-                <input type="password" name="password" class="fc-form-control"
-                       placeholder="Your password" required>
+                <div style="position:relative;">
+                    <input type="password" name="password" id="login_password" class="fc-form-control"
+                           placeholder="Your password" required style="padding-right:42px;">
+                    <button type="button" onclick="togglePw('login_password','login_eye')"
+                            style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:#94a3b8;cursor:pointer;padding:0;">
+                        <i class="bi bi-eye" id="login_eye"></i>
+                    </button>
+                </div>
             </div>
             <button type="submit" class="fc-btn-auth">Sign In</button>
         </form>
@@ -92,5 +98,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="assets/js/script.js"></script>
+<script>
+function togglePw(inputId, iconId) {
+    const inp = document.getElementById(inputId);
+    const ico = document.getElementById(iconId);
+    inp.type = inp.type === 'password' ? 'text' : 'password';
+    ico.className = inp.type === 'password' ? 'bi bi-eye' : 'bi bi-eye-slash';
+}
+</script>
 </body>
 </html>
