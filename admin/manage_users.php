@@ -9,7 +9,7 @@ $msg = $err = '';
 if (isset($_GET['toggle'])) {
     $uid    = (int)$_GET['toggle'];
     $newst  = $_GET['to'] === 'active' ? 'active' : 'inactive';
-    $conn->query("UPDATE users SET status='$newst' WHERE user_id=$uid AND role=''");
+    $conn->query("UPDATE users SET status='$newst' WHERE user_id=$uid AND role='user'");
     logActivity($_SESSION['user_id'], "Set user #$uid status to $newst");
     $msg = "User status updated to " . ucfirst($newst) . ".";
 }
@@ -26,6 +26,8 @@ if (isset($_GET['delete'])) {
         $msg = "User deleted.";
     }
 }
+
+
 
 // Search & filter
 $search  = sanitize($_GET['search'] ?? '');

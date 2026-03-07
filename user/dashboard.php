@@ -66,9 +66,9 @@ $firstname = explode(' ', $_SESSION['name'])[0];
             <div class="fc-welcome">
                 <div class="fc-welcome-title"><?= $greeting ?>, <?= htmlspecialchars($firstname) ?>!</div>
                 <div class="fc-welcome-sub">Stay safe. Report incidents. Let FlashCru handle the rest.</div>
-                <!-- <a href="report_incident.php" class="fc-btn fc-btn-primary" style="font-size:13px;padding:10px 22px;">
+                <a href="report_incident.php" class="fc-btn fc-btn-primary" style="font-size:13px;padding:10px 22px;">
                     <i class="bi bi-plus-circle-fill"></i> Report Incident
-                </a> -->
+                </a>
             </div>
 
             <!-- Stats -->

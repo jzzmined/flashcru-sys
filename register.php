@@ -29,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             $hash     = password_hash($password, PASSWORD_DEFAULT);
             // FIX: Derive username from name, not email
-            $username = strtolower(str_replace(' ', '_', $name)) . rand(10, 99);
+            $username = strtolower(str_replace(' ', '_', $name)) . time();
             // FIX: role is 'user' (not 'responder') so auth_user.php lets them log in
             $ins = $conn->prepare("INSERT INTO users (username, full_name, email, contact_number, password, role, status, created_at) VALUES (?, ?, ?, ?, ?, 'user', 'active', NOW())");
             $ins->bind_param("sssss", $username, $name, $email, $phone, $hash);
