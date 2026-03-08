@@ -358,7 +358,7 @@ if (!empty($all_rows)) {
                 <button class="fc-btn fc-btn-primary" style="flex:1;justify-content:center;" onclick="openEditModal(<?= $r['id'] ?>)">
                     <i class="bi bi-pencil-fill"></i> Edit Report
                 </button>
-                <button class="fc-btn fc-btn-danger" style="flex:1;justify-content:center;" onclick="openCancelModal(<?= $r['id'] ?>)">
+                <button class="fc-btn fc-btn-danger" style="flex:1;justify-content:center;" onclick="openCancelRequestModal(<?= $r['id'] ?>)">
                     <i class="bi bi-x-circle-fill"></i> Cancel
                 </button>
             </div>
