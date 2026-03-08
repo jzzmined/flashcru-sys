@@ -46,62 +46,9 @@ if (isset($_SESSION['user_id'])) {
             color: #fff !important;
         }
 
-        /* Hero badge */
-        .fc-hero-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            /* Slightly tighter gap */
-
-            /* Glassmorphism Background */
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(8px);
-
-            /* Thinner Soft Border */
-            border: 2px solid rgba(255, 255, 255, 0.1);
-
-            /* Text Styling - Scaled Down */
-            color: #FFFFFF;
-            text-transform: uppercase;
-            font-family: 'Lexend', sans-serif;
-            font-size: 11px;
-            /* Smaller font */
-            font-weight: 500;
-            letter-spacing: 0.15em;
-            text-transform: uppercase;
-
-            /* Compact Sizing */
-            padding: 6px 20px;
-            /* Reduced vertical and horizontal padding */
-            border-radius: 100px;
-
-            margin-bottom: 20px;
-            transition: all 0.3s ease;
-        }
-
-        /* Icon scaling */
-        .fc-hero-badge img,
-        .fc-hero-badge svg,
-        .fc-hero-badge span {
-            font-size: 12px;
-            /* Ensures the shield icon stays proportional */
-            height: 12px;
-        }
-
         /* Step circles — black */
         .fc-step-num {
             background: #111 !important;
-        }
-
-        /* Phone action buttons — black */
-        .fc-pBtn-fire,
-        .fc-pBtn-medical,
-        .fc-pBtn-security {
-            background: #222 !important;
-        }
-
-        .fc-pBtn i {
-            color: #fff !important;
         }
 
         /* Map dot — black */
@@ -348,9 +295,10 @@ if (isset($_SESSION['user_id'])) {
 
     <!-- =================== HERO =================== -->
     <section class="fc-hero">
+        <!-- Left: Text Content -->
         <div class="fc-hero-content">
             <div class="fc-hero-badge">
-                <i class="bi bi-shield-check" style="margin-right: 8px; color: #ff6b6b;"></i>
+                <span class="fc-hero-badge-dot"></span>
                 Emergency Response Platform
             </div>
             <h1 class="fc-hero-title">
@@ -361,48 +309,66 @@ if (isset($_SESSION['user_id'])) {
             <p class="fc-hero-sub">
                 FlashCru powers Davao City with faster, smarter emergency response.
             </p>
+            <div class="fc-hero-actions">
+                <a href="register.php" class="fc-hero-btn-primary">Get Started</a>
+                <a href="#features" class="fc-hero-btn-outline">Learn More</a>
+            </div>
+            <!-- Social proof -->
+            <div class="fc-hero-social-proof">
+                <div class="fc-hero-avatars">
+                    <div class="fc-avatar" style="background:#e53e3e;">J</div>
+                    <div class="fc-avatar" style="background:#805ad5;">N</div>
+                    <div class="fc-avatar" style="background:#2b6cb0;">M</div>
+                </div>
+                <span>Joined by 2,500+ professionals</span>
+            </div>
         </div>
 
-        <!-- Phone mockups -->
-        <div class="fc-hero-phones">
-            <div class="fc-phone fc-phone-back">
-                <div class="fc-phone-screen"
-                    style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;min-height:310px;">
-                    <div
-                        style="width:54px;height:54px;background:#111;border-radius:50%;display:flex;align-items:center;justify-content:center;">
-                        <i class="bi bi-lightning-charge-fill" style="color:#fff;font-size:22px;"></i>
+        <!-- Right: Floating UI Card -->
+        <div class="fc-hero-card-wrap">
+            <div class="fc-hero-card">
+                <!-- Top icon row -->
+                <div class="fc-hero-card-icons">
+                    <div class="fc-hci fc-hci-primary">
+                        <i class="bi bi-lightning-charge-fill"></i>
+                        <span>Fast</span>
                     </div>
-                    <div style="color:#fff;font-family:Lexend,sans-serif;font-weight:700;font-size:14px;">FlashCru</div>
-                    <div style="color:rgba(255,255,255,.4);font-size:10px;">Flash Crew Response</div>
+                    <div class="fc-hci">
+                        <i class="bi bi-shield-check"></i>
+                        <span>Secure</span>
+                    </div>
+                    <div class="fc-hci">
+                        <i class="bi bi-globe"></i>
+                        <span>Global</span>
+                    </div>
                 </div>
-            </div>
-            <div class="fc-phone fc-phone-front">
-                <div class="fc-phone-screen">
-                    <div class="fc-phone-header">
-                        <span class="fc-phone-title"><i class="bi bi-lightning-charge-fill" style="color:#fff;"></i>
-                            PANIC</span>
-                        <i class="bi bi-three-dots" style="color:rgba(255,255,255,.4);font-size:12px;"></i>
+
+                <!-- Divider -->
+                <div class="fc-hero-card-divider"></div>
+
+                <!-- Stats row -->
+                <div class="fc-hero-card-stats">
+                    <div class="fc-hcs-item">
+                        <div class="fc-hcs-label">Latency</div>
+                        <div class="fc-hcs-value">0.02ms</div>
                     </div>
-                    <div style="color:rgba(255,255,255,.4);font-size:9px;margin-bottom:8px;">📍 Current Location</div>
-                    <div class="fc-phone-map">
-                        <div class="fc-map-grid"></div>
-                        <div class="fc-map-dot"></div>
-                        <div
-                            style="position:absolute;top:12px;left:12px;width:7px;height:7px;background:rgba(255,255,255,.6);border-radius:50%;">
-                        </div>
-                        <div
-                            style="position:absolute;bottom:16px;right:22px;width:6px;height:6px;background:rgba(255,255,255,.4);border-radius:50%;">
-                        </div>
-                        <div
-                            style="position:absolute;top:38%;right:28%;width:6px;height:6px;background:rgba(255,255,255,.5);border-radius:50%;">
-                        </div>
+                    <div class="fc-hcs-item">
+                        <div class="fc-hcs-label">Uptime</div>
+                        <div class="fc-hcs-value fc-hcs-green">99.9%</div>
                     </div>
-                    <div class="fc-phone-btns">
-                        <div class="fc-pBtn fc-pBtn-fire"><i class="bi bi-fire"></i></div>
-                        <div class="fc-pBtn fc-pBtn-medical"><i class="bi bi-heart-pulse-fill"></i></div>
-                        <div class="fc-pBtn fc-pBtn-security"><i class="bi bi-shield-fill-exclamation"></i></div>
-                    </div>
-                    <div class="fc-phone-powered">Powered by FlashCru ⚡</div>
+                </div>
+
+                <!-- Live pulse ring -->
+                <div class="fc-hero-card-pulse">
+                    <div class="fc-pulse-ring"></div>
+                    <div class="fc-pulse-core"><i class="bi bi-broadcast"></i></div>
+                </div>
+
+                <!-- Incident type chips -->
+                <div class="fc-hero-card-chips">
+                    <span class="fc-chip fc-chip-fire"><i class="bi bi-fire"></i> Fire</span>
+                    <span class="fc-chip fc-chip-med"><i class="bi bi-heart-pulse"></i> Medical</span>
+                    <span class="fc-chip fc-chip-sec"><i class="bi bi-shield-exclamation"></i> Security</span>
                 </div>
             </div>
         </div>
