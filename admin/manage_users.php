@@ -7,20 +7,11 @@ $msg = $err = '';
 
 // Toggle user status
 if (isset($_GET['toggle'])) {
-    $uid   = (int)$_GET['toggle'];
-    $newst = ($_GET['to'] ?? '') === 'active' ? 'active' : 'inactive';
-    $stmt  = $conn->prepare("UPDATE users SET status=? WHERE user_id=? AND role='user'");
-    $stmt->bind_param("si", $newst, $uid);
-    $stmt->execute();
+    $uid    = (int)$_GET['toggle'];
+    $newst  = $_GET['to'] === 'active' ? 'active' : 'inactive';
+    $conn->query("UPDATE users SET status='$newst' WHERE user_id=$uid AND role='user'");
     logActivity($_SESSION['user_id'], "Set user #$uid status to $newst");
-    $qs = http_build_query(array_filter([
-        'msg'    => 'toggled',
-        'search' => $_GET['search'] ?? '',
-        'status' => $_GET['status'] ?? '',
-        'page'   => $_GET['page']   ?? '',
-    ]));
-    header("Location: manage_users.php" . ($qs ? "?$qs" : ''));
-    exit;
+    $msg = "User status updated to " . ucfirst($newst) . ".";
 }
 
 // Delete user (only if no incidents)
@@ -30,34 +21,17 @@ if (isset($_GET['delete'])) {
     if ($used > 0) {
         $err = "Cannot delete — this user has $used incident report(s). Deactivate them instead.";
     } else {
-        $stmt = $conn->prepare("DELETE FROM users WHERE user_id=? AND role='user'");
-        $stmt->bind_param("i", $uid);
-        $stmt->execute();
+        $conn->query("DELETE FROM users WHERE user_id=$uid AND role='user'");
         logActivity($_SESSION['user_id'], "Deleted user #$uid");
-        $qs = http_build_query(array_filter([
-            'msg'    => 'deleted',
-            'search' => $_GET['search'] ?? '',
-            'status' => $_GET['status'] ?? '',
-            'page'   => $_GET['page']   ?? '',
-        ]));
-        header("Location: manage_users.php" . ($qs ? "?$qs" : ''));
-        exit;
+        $msg = "User deleted.";
     }
-}
-
-// Messages from redirect
-if (isset($_GET['msg'])) {
-    if ($_GET['msg'] === 'toggled') $msg = 'User status updated successfully.';
-    if ($_GET['msg'] === 'deleted') $msg = 'User deleted successfully.';
 }
 
 // Search & filter
 $search   = sanitize($_GET['search'] ?? '');
-$status_f = in_array($_GET['status'] ?? '', ['active', 'inactive']) ? $_GET['status'] : '';
 
 $where = "WHERE u.role = 'user'";
 if ($search)   $where .= " AND (u.full_name LIKE '%$search%' OR u.email LIKE '%$search%' OR u.contact_number LIKE '%$search%')";
-if ($status_f) $where .= " AND u.status = '$status_f'";
 
 // Pagination
 $per_page = 15;
@@ -149,15 +123,10 @@ $cnt_total    = $cnt_active + $cnt_inactive;
                                    placeholder="Search name, email, phone..."
                                    value="<?= htmlspecialchars($search) ?>">
                         </div>
-                        <select name="status" class="fc-form-control" style="width:150px;">
-                            <option value="">All Status</option>
-                            <option value="active"   <?= $status_f==='active'   ? 'selected':'' ?>>Active</option>
-                            <option value="inactive" <?= $status_f==='inactive' ? 'selected':'' ?>>Inactive</option>
-                        </select>
                         <button type="submit" class="fc-btn fc-btn-primary" style="padding:9px 18px;font-size:13px;">
                             <i class="bi bi-search"></i> Search
                         </button>
-                        <?php if ($search || $status_f): ?>
+                        <?php if ($search): ?>
                         <a href="manage_users.php" class="fc-btn" style="padding:9px 18px;font-size:13px;background:#fff;border:1.5px solid var(--fc-border);color:var(--fc-text);">
                             <i class="bi bi-x-circle"></i> Clear
                         </a>
@@ -191,7 +160,6 @@ $cnt_total    = $cnt_active + $cnt_inactive;
                                 <th>Reports</th>
                                 <th>Last Report</th>
                                 <th>Joined</th>
-                                <th>Last Login</th>
                                 <th>Status</th>
                                 <th>Actions</th>
                             </tr>
@@ -202,9 +170,15 @@ $cnt_total    = $cnt_active + $cnt_inactive;
                                 <td style="color:var(--fc-muted);font-size:11.5px;">#<?= $u['user_id'] ?></td>
                                 <td>
                                     <div style="display:flex;align-items:center;gap:10px;">
+                                        <?php if (!empty($u['profile_picture']) && file_exists('../' . $u['profile_picture'])): ?>
+                                        <div class="ir-avatar" style="background:none;padding:0;overflow:hidden;">
+                                            <img src="../<?= htmlspecialchars($u['profile_picture']) ?>" alt="<?= htmlspecialchars($u['full_name']) ?>" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
+                                        </div>
+                                        <?php else: ?>
                                         <div class="ir-avatar" style="background:<?= $u['status']==='active' ? 'var(--fc-primary)' : '#94a3b8' ?>;">
                                             <?= strtoupper(substr($u['full_name'], 0, 1)) ?>
                                         </div>
+                                        <?php endif; ?>
                                         <div>
                                             <div style="font-weight:600;font-size:13px;color:var(--fc-dark);"><?= htmlspecialchars($u['full_name']) ?></div>
                                             <div style="font-size:11.5px;color:var(--fc-muted);"><?= htmlspecialchars($u['email']) ?></div>
@@ -223,9 +197,6 @@ $cnt_total    = $cnt_active + $cnt_inactive;
                                 <td style="font-size:12px;color:var(--fc-muted);white-space:nowrap;">
                                     <?= date('M d, Y', strtotime($u['created_at'])) ?>
                                 </td>
-                                <td style="font-size:12px;color:var(--fc-muted);white-space:nowrap;">
-                                    <?= $u['last_login'] ? date('M d, Y', strtotime($u['last_login'])) : '<span style="color:#cbd5e1;">Never</span>' ?>
-                                </td>
                                 <td>
                                     <?php if ($u['status'] === 'active'): ?>
                                         <span class="badge-status" style="background:var(--fc-success-lt);color:var(--fc-success);">
@@ -240,14 +211,14 @@ $cnt_total    = $cnt_active + $cnt_inactive;
                                 <td>
                                     <div style="display:flex;gap:6px;">
                                         <?php if ($u['status'] === 'active'): ?>
-                                            <a href="?toggle=<?= $u['user_id'] ?>&to=inactive<?= $search?"&search=$search":'' ?><?= $status_f?"&status=$status_f":'' ?>"
+                                            <a href="?toggle=<?= $u['user_id'] ?>&to=inactive<?= $search?"&search=$search":'' ?>"
                                                class="fc-icon-btn" title="Deactivate"
                                                style="background:#fff7ed;border-color:#fed7aa;color:#f59e0b;"
                                                onclick="return confirm('Deactivate <?= htmlspecialchars(addslashes($u['full_name'])) ?>?')">
                                                 <i class="bi bi-person-dash-fill"></i>
                                             </a>
                                         <?php else: ?>
-                                            <a href="?toggle=<?= $u['user_id'] ?>&to=active<?= $search?"&search=$search":'' ?><?= $status_f?"&status=$status_f":'' ?>"
+                                            <a href="?toggle=<?= $u['user_id'] ?>&to=active<?= $search?"&search=$search":'' ?>"
                                                class="fc-icon-btn" title="Activate"
                                                style="background:var(--fc-success-lt);border-color:#a7f3d0;color:var(--fc-success);"
                                                onclick="return confirm('Activate <?= htmlspecialchars(addslashes($u['full_name'])) ?>?')">
@@ -260,7 +231,7 @@ $cnt_total    = $cnt_active + $cnt_inactive;
                                             <i class="bi bi-eye-fill"></i>
                                         </button>
                                         <?php if ($u['incident_count'] == 0): ?>
-                                        <a href="?delete=<?= $u['user_id'] ?><?= $search?"&search=$search":'' ?><?= $status_f?"&status=$status_f":'' ?>"
+                                        <a href="?delete=<?= $u['user_id'] ?><?= $search?"&search=$search":'' ?>"
                                            class="fc-icon-btn del" title="Delete User"
                                            onclick="return confirm('Permanently delete <?= htmlspecialchars(addslashes($u['full_name'])) ?>?')">
                                             <i class="bi bi-trash-fill"></i>
@@ -281,11 +252,11 @@ $cnt_total    = $cnt_active + $cnt_inactive;
                 <!-- Pagination -->
                 <?php if ($total_pages > 1): ?>
                 <div class="fc-pagination no-print" style="padding:16px 20px 14px;border-top:1px solid var(--fc-border);">
-                    <a href="?page=<?= $page-1 ?>&search=<?= urlencode($search) ?>&status=<?= $status_f ?>" class="fc-page-btn <?= $page<=1?'disabled':'' ?>"><i class="bi bi-chevron-left"></i></a>
+                    <a href="?page=<?= $page-1 ?>&search=<?= urlencode($search) ?>" class="fc-page-btn <?= $page<=1?'disabled':'' ?>"><i class="bi bi-chevron-left"></i></a>
                     <?php for ($p=1; $p<=$total_pages; $p++): ?>
-                    <a href="?page=<?= $p ?>&search=<?= urlencode($search) ?>&status=<?= $status_f ?>" class="fc-page-btn <?= $p===$page?'active':'' ?>"><?= $p ?></a>
+                    <a href="?page=<?= $p ?>&search=<?= urlencode($search) ?>" class="fc-page-btn <?= $p===$page?'active':'' ?>"><?= $p ?></a>
                     <?php endfor; ?>
-                    <a href="?page=<?= $page+1 ?>&search=<?= urlencode($search) ?>&status=<?= $status_f ?>" class="fc-page-btn <?= $page>=$total_pages?'disabled':'' ?>"><i class="bi bi-chevron-right"></i></a>
+                    <a href="?page=<?= $page+1 ?>&search=<?= urlencode($search) ?>" class="fc-page-btn <?= $page>=$total_pages?'disabled':'' ?>"><i class="bi bi-chevron-right"></i></a>
                     <span class="fc-page-info">Page <?= $page ?> of <?= $total_pages ?></span>
                 </div>
                 <?php endif; ?>
@@ -317,9 +288,15 @@ $cnt_total    = $cnt_active + $cnt_inactive;
                 <i class="bi bi-x"></i>
             </button>
             <div style="display:flex;align-items:center;gap:14px;">
+                <?php if (!empty($u['profile_picture']) && file_exists('../' . $u['profile_picture'])): ?>
+                <div style="width:56px;height:56px;border-radius:50%;overflow:hidden;flex-shrink:0;">
+                    <img src="../<?= htmlspecialchars($u['profile_picture']) ?>" style="width:100%;height:100%;object-fit:cover;">
+                </div>
+                <?php else: ?>
                 <div style="width:56px;height:56px;border-radius:50%;background:var(--fc-primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;font-family:'Lexend',sans-serif;flex-shrink:0;">
                     <?= strtoupper(substr($u['full_name'],0,1)) ?>
                 </div>
+                <?php endif; ?>
                 <div>
                     <div style="font-family:'Lexend',sans-serif;font-weight:700;font-size:17px;color:#fff;"><?= htmlspecialchars($u['full_name']) ?></div>
                     <div style="font-size:12px;color:rgba(255,255,255,.5);margin-top:2px;"><?= htmlspecialchars($u['email']) ?></div>
@@ -337,7 +314,6 @@ $cnt_total    = $cnt_active + $cnt_inactive;
             <div class="ir-detail-row"><span>Email</span><strong><?= htmlspecialchars($u['email']) ?></strong></div>
             <div class="ir-detail-row"><span>Phone</span><strong><?= htmlspecialchars($u['contact_number'] ?? '—') ?></strong></div>
             <div class="ir-detail-row"><span>Joined</span><strong><?= date('F j, Y', strtotime($u['created_at'])) ?></strong></div>
-            <div class="ir-detail-row"><span>Last Login</span><strong><?= $u['last_login'] ? date('F j, Y g:i A', strtotime($u['last_login'])) : 'Never' ?></strong></div>
             <div class="ir-detail-row"><span>Total Reports</span>
                 <strong style="color:var(--fc-primary);"><?= $u['incident_count'] ?></strong>
             </div>
