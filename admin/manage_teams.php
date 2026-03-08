@@ -118,10 +118,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_team'])) {
         // No new image and not removing = keep existing $imagePath as is
 
         if (!$err) {
-            $location = sanitize($_POST['edit_team_location'] ?? '');
-            $contact  = sanitize($_POST['edit_team_contact']  ?? '');
-            $stmt = $conn->prepare("UPDATE teams SET team_name=?, team_type=?, team_lead=?, team_image=?, location=?, contact_number=? WHERE team_id=?");
-            $stmt->bind_param("ssssssi", $name, $type, $lead, $imagePath, $location, $contact, $id);
+            $stmt = $conn->prepare("UPDATE teams SET team_name=?, team_type=?, team_lead=?, team_image=? WHERE team_id=?");
+            $stmt->bind_param("ssssi", $name, $type, $lead, $imagePath, $id);
             if ($stmt->execute()) {
                 logActivity($_SESSION['user_id'], "Updated team #$id: $name");
                 $msg = "Team \"$name\" updated successfully.";
@@ -214,22 +212,10 @@ while ($t = $teams->fetch_assoc()) {
             <div class="row g-4">
                 <div class="container-fluid py-4">
                     <div class="d-flex justify-content-between align-items-start mb-4">
-                        <div class="d-flex flex-column gap-2" style="width: 100%; max-width: 350px;">
-                            <div class="position-relative">
-                                <i class="bi bi-search position-absolute"
-                                    style="left: 15px; top: 50%; transform: translateY(-50%); color: #6c757d; font-size: 1.1rem;"></i>
-                                <div class="fc-search-wrapper">
-                                    <i class="fas fa-search fc-search-icon"></i>
-                                    <input type="text" class="fc-search-input" placeholder="Search teams...">
-                                </div>
+                        <div class="fc-search-wrapper" style="width:100%; max-width:350px;">
+                                <i class="bi bi-search fc-search-icon"></i>
+                                <input type="text" id="teamSearchInput" class="fc-search-input" placeholder="Search teams..." oninput="applyTeamFilters()">
                             </div>
-                            <div>
-                                <button type="button" class="btn"
-                                    style="background-color: #e9ecef; color: #5c636a; border: none; border-radius: 20px; padding: 4px 16px; font-weight: 600; font-size: 13px;">
-                                    FILTER <i class="bi bi-funnel ms-1"></i>
-                                </button>
-                            </div>
-                        </div>
 
                         <button type="button" class="btn"
                             style="background: #ff2d2d; color: white; font-weight: 600; border-radius: 8px; padding: 10px 20px; white-space: nowrap;"
@@ -276,7 +262,7 @@ while ($t = $teams->fetch_assoc()) {
                             ];
                             $tc = $typeColors[$t['team_type']] ?? ['bg' => '#f0f0f0', 'accent' => '#555', 'icon' => 'bi-people-fill'];
                             ?>
-                            <div class="col-md-6 col-xl-3 team-card" data-status="<?= $t['status'] ?>">
+                            <div class="col-md-6 col-xl-3 team-card" data-status="<?= $t['status'] ?>" data-team-type="<?= htmlspecialchars($t['team_type'], ENT_QUOTES) ?>">
                                 <div class="card h-100 shadow-sm"
                                     style="border: none; border-radius: 15px; overflow: hidden;">
                                     <!-- Card Header Visual -->
@@ -285,30 +271,29 @@ while ($t = $teams->fetch_assoc()) {
                                             <img src="../<?= htmlspecialchars($t['team_image']) ?>"
                                                 alt="<?= htmlspecialchars($t['team_name']) ?>"
                                                 style="width:100%; height:100%; object-fit:cover; display:block;">
-                                            <span class="badge"
-                                                style="position:absolute; top:12px; right:12px; background:rgba(0,0,0,0.45); color:<?= $badgeColor ?>; font-weight:700; border-radius:20px; padding:5px 10px; font-size:11px; backdrop-filter:blur(4px);">
-                                                <?= $badgeText ?>
-                                            </span>
-                                            <span class="badge"
-                                                style="position:absolute; top:12px; left:12px; background:<?= $tc['accent'] ?>dd; color:white; font-weight:700; border-radius:20px; padding:5px 10px; font-size:11px;">
-                                                <?= htmlspecialchars($t['team_type']) ?>
-                                            </span>
+                                            <div style="position:absolute; inset:0; background:linear-gradient(to top, rgba(0,0,0,0.45) 0%, transparent 60%);"></div>
+                                            <!-- Bottom row: type left, status right -->
+                                            <div style="position:absolute; bottom:10px; left:10px; right:10px; display:flex; justify-content:space-between; align-items:center; gap:6px;">
+                                                <span style="background:<?= $tc['accent'] ?>dd; color:white; font-weight:700; border-radius:20px; padding:3px 9px; font-size:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:55%;">
+                                                    <?= htmlspecialchars($t['team_type']) ?>
+                                                </span>
+                                                <span style="background:rgba(0,0,0,0.5); color:<?= $badgeColor ?>; font-weight:700; border-radius:20px; padding:3px 9px; font-size:10px; white-space:nowrap; backdrop-filter:blur(4px);">
+                                                    <?= $badgeText ?>
+                                                </span>
+                                            </div>
                                         </div>
                                     <?php else: ?>
-                                        <div
-                                            style="height: 140px; background: <?= $tc['bg'] ?>; display: flex; align-items: center; justify-content: center; position: relative;">
-                                            <i class="bi <?= $tc['icon'] ?>"
-                                                style="font-size: 52px; color: <?= $tc['accent'] ?>; opacity: 0.85;"></i>
-                                            <!-- Status Badge -->
-                                            <span class="badge"
-                                                style="position: absolute; top: 12px; right: 12px; background: <?= $badgeBg ?>; color: <?= $badgeColor ?>; font-weight: 700; border-radius: 20px; padding: 5px 10px; font-size: 11px;">
-                                                <?= $badgeText ?>
-                                            </span>
-                                            <!-- Type Badge -->
-                                            <span class="badge"
-                                                style="position: absolute; top: 12px; left: 12px; background: <?= $tc['accent'] ?>22; color: <?= $tc['accent'] ?>; font-weight: 700; border-radius: 20px; padding: 5px 10px; font-size: 11px;">
-                                                <?= htmlspecialchars($t['team_type']) ?>
-                                            </span>
+                                        <div style="height: 140px; background: <?= $tc['bg'] ?>; display: flex; align-items: center; justify-content: center; position: relative;">
+                                            <i class="bi <?= $tc['icon'] ?>" style="font-size: 52px; color: <?= $tc['accent'] ?>; opacity: 0.85;"></i>
+                                            <!-- Bottom row: type left, status right -->
+                                            <div style="position:absolute; bottom:10px; left:10px; right:10px; display:flex; justify-content:space-between; align-items:center; gap:6px;">
+                                                <span style="background:<?= $tc['accent'] ?>22; color:<?= $tc['accent'] ?>; font-weight:700; border-radius:20px; padding:3px 9px; font-size:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:55%;">
+                                                    <?= htmlspecialchars($t['team_type']) ?>
+                                                </span>
+                                                <span style="background:<?= $badgeBg ?>; color:<?= $badgeColor ?>; font-weight:700; border-radius:20px; padding:3px 9px; font-size:10px; white-space:nowrap;">
+                                                    <?= $badgeText ?>
+                                                </span>
+                                            </div>
                                         </div>
                                     <?php endif; ?>
 
@@ -331,7 +316,7 @@ while ($t = $teams->fetch_assoc()) {
                                         <div class="d-flex gap-2">
                                             <button class="btn btn-light w-100"
                                                 style="font-weight: 600; border-radius: 8px; font-size: 13px;"
-                                                onclick="viewTeamDetails(<?= $t['team_id'] ?>, '<?= htmlspecialchars(addslashes($t['team_name']), ENT_QUOTES) ?>', '<?= htmlspecialchars(addslashes($t['team_type']), ENT_QUOTES) ?>', '<?= htmlspecialchars(addslashes($t['team_lead'] ?: 'Unassigned'), ENT_QUOTES) ?>', <?= (int) $t['member_count'] ?>, '<?= $t['status'] ?>', '<?= htmlspecialchars(addslashes($t['location'] ?? ''), ENT_QUOTES) ?>', '<?= htmlspecialchars(addslashes($t['contact_number'] ?? ''), ENT_QUOTES) ?>')">
+                                                onclick="viewTeamDetails(<?= $t['team_id'] ?>, '<?= htmlspecialchars(addslashes($t['team_name']), ENT_QUOTES) ?>', '<?= htmlspecialchars(addslashes($t['team_type']), ENT_QUOTES) ?>', '<?= htmlspecialchars(addslashes($t['team_lead'] ?: 'Unassigned'), ENT_QUOTES) ?>', <?= (int) $t['member_count'] ?>, '<?= $t['status'] ?>')">
                                                 <i class="bi bi-eye me-1"></i> Details
                                             </button>
                                             <!-- Dropdown for actions -->
@@ -345,7 +330,7 @@ while ($t = $teams->fetch_assoc()) {
                                                     style="border-radius: 10px; border: none; box-shadow: 0 5px 20px rgba(0,0,0,0.1); font-size: 14px; min-width: 170px;">
                                                     <li>
                                                         <a class="dropdown-item" href="#" style="padding: 10px 16px;"
-                                                            onclick="openEditModal(<?= $t['team_id'] ?>, '<?= htmlspecialchars(addslashes($t['team_name']), ENT_QUOTES) ?>', '<?= htmlspecialchars(addslashes($t['team_type']), ENT_QUOTES) ?>', '<?= htmlspecialchars(addslashes($t['team_lead'] ?? ''), ENT_QUOTES) ?>', '<?= htmlspecialchars(addslashes($t['team_image'] ?? ''), ENT_QUOTES) ?>', '<?= htmlspecialchars(addslashes($t['location'] ?? ''), ENT_QUOTES) ?>', '<?= htmlspecialchars(addslashes($t['contact_number'] ?? ''), ENT_QUOTES) ?>'); return false;">
+                                                            onclick="openEditModal(<?= $t['team_id'] ?>, '<?= htmlspecialchars(addslashes($t['team_name']), ENT_QUOTES) ?>', '<?= htmlspecialchars(addslashes($t['team_type']), ENT_QUOTES) ?>', '<?= htmlspecialchars(addslashes($t['team_lead'] ?? ''), ENT_QUOTES) ?>', '<?= htmlspecialchars(addslashes($t['team_image'] ?? ''), ENT_QUOTES) ?>'); return false;">
                                                             <i class="bi bi-pencil-square me-2" style="color:#0d6efd;"></i>
                                                             Edit Team
                                                         </a>
@@ -392,11 +377,9 @@ while ($t = $teams->fetch_assoc()) {
                 </div>
             </div>
 
-        </div><!-- /fc-content -->
-    </div><!-- /fc-main -->
-</div><!-- /fc-app -->
+            <?php include '../includes/footer.php'; ?>
 
-<!-- ===== Modal: Add Team ===== -->
+            <!-- ===== Modal: Add Team ===== -->
             <div class="modal fade" id="addTeamModal" tabindex="-1" aria-hidden="true">
                 <div class="modal-dialog modal-dialog-centered">
                     <div class="modal-content"
@@ -624,18 +607,6 @@ while ($t = $teams->fetch_assoc()) {
                                                 class="form-control" placeholder="Lead's full name"
                                                 style="border-radius: 10px; border: 1.5px solid #eee; padding: 10px 14px;">
                                         </div>
-                                        <div class="mb-3">
-                                            <label class="form-label" style="font-weight: 700; color: #1a1a1a;">Location / Station</label>
-                                            <input type="text" name="edit_team_location" id="editTeamLocation"
-                                                class="form-control" placeholder="e.g. Agdao Fire Station"
-                                                style="border-radius: 10px; border: 1.5px solid #eee; padding: 10px 14px;">
-                                        </div>
-                                        <div class="mb-3">
-                                            <label class="form-label" style="font-weight: 700; color: #1a1a1a;">Contact Number</label>
-                                            <input type="text" name="edit_team_contact" id="editTeamContact"
-                                                class="form-control" placeholder="e.g. 09XXXXXXXXX"
-                                                style="border-radius: 10px; border: 1.5px solid #eee; padding: 10px 14px;">
-                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -653,6 +624,9 @@ while ($t = $teams->fetch_assoc()) {
                 </div>
             </div>
 
+        </div><!-- /fc-content -->
+    </div><!-- /fc-main -->
+</div><!-- /fc-app -->
 
 <script>
     // ── Add Member Rows ──────────────────────────────────────────────
@@ -706,7 +680,7 @@ while ($t = $teams->fetch_assoc()) {
     }
 
     // ── View Team Details ─────────────────────────────────────────────
-    function viewTeamDetails(id, name, type, lead, memberCount, status, location, contact) {
+    function viewTeamDetails(id, name, type, lead, memberCount, status) {
         document.getElementById('detailsModalTitle').textContent = name;
 
         const isActive = status === 'active';
@@ -727,14 +701,6 @@ while ($t = $teams->fetch_assoc()) {
             <div class="mb-3">
                 <div style="font-size: 12px; color: #aaa; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">Team Type</div>
                 <div style="font-weight: 600; color: #1a1a1a;">${type}</div>
-            </div>
-            <div class="mb-3">
-                <div style="font-size: 12px; color: #aaa; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">Location / Station</div>
-                <div style="font-weight: 600; color: #1a1a1a;">${location || '<span style="color:#aaa;font-weight:400;">Not set</span>'}</div>
-            </div>
-            <div class="mb-3">
-                <div style="font-size: 12px; color: #aaa; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">Contact Number</div>
-                <div style="font-weight: 600; color: #1a1a1a;">${contact || '<span style="color:#aaa;font-weight:400;">Not set</span>'}</div>
             </div>
             <div>
                 <div style="font-size: 12px; color: #aaa; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">Members</div>
@@ -770,12 +736,10 @@ while ($t = $teams->fetch_assoc()) {
     }
 
     // ── Open Edit Modal ───────────────────────────────────────────────
-    function openEditModal(id, name, type, lead, imagePath, location, contact) {
+    function openEditModal(id, name, type, lead, imagePath) {
         document.getElementById('editTeamId').value = id;
         document.getElementById('editTeamName').value = name;
         document.getElementById('editTeamLead').value = lead;
-        document.getElementById('editTeamLocation').value = location || '';
-        document.getElementById('editTeamContact').value = contact || '';
         document.getElementById('removeTeamImage').value = '0';
 
         // Set team type select
@@ -878,21 +842,14 @@ while ($t = $teams->fetch_assoc()) {
         document.getElementById('imageUploadArea').style.background = '#fafafa';
     });
 
-    function searchTeams() {
-        let input = document.getElementById('searchTeamInput').value.toLowerCase();
-        let cards = document.querySelectorAll('.team-card');
-
-        cards.forEach(card => {
-            // Find the team name inside the card (the <h5> tag text)
-            let teamName = card.querySelector('.card-body h5').innerText.toLowerCase();
-
-            if (teamName.includes(input)) {
-                card.style.display = "block";
-            } else {
-                card.style.display = "none";
-            }
+    // ── Search ────────────────────────────────────────────────────────
+    function applyTeamFilters() {
+        const search = document.getElementById('teamSearchInput').value.toLowerCase().trim();
+        document.querySelectorAll('.team-card').forEach(card => {
+            const name = card.querySelector('.card-body h5')?.innerText.toLowerCase() ?? '';
+            card.style.display = (!search || name.includes(search)) ? '' : 'none';
         });
     }
-</script>
 
-<?php include '../includes/footer.php'; ?>
+    function searchTeams() { applyTeamFilters(); }
+</script>

@@ -99,7 +99,7 @@ while ($r = $by_status->fetch_assoc()) {
                     <div style="font-family:Lexend,sans-serif;font-weight:800;font-size:19px;color:#fff;margin-bottom:4px;">FlashCru Control Center</div>
                     <div style="color:rgba(255,255,255,.45);font-size:12px;"><?= date('l, F j, Y \a\t g:i A') ?></div>
                 </div>
-                <div style="display:flex;gap:10px;flex-wrap:wrap;position:relative;z-index:1;" class="no-print">
+                <div style="display:flex;gap:10px;flex-wrap:wrap;position:relative;z-index:1;no-print">
                     <a href="manage_reports.php" class="fc-btn fc-btn-primary no-print" style="font-size:13px;padding:10px 20px;">
                         <i class="bi bi-file-earmark-text-fill"></i> View Reports
                     </a>
@@ -171,10 +171,20 @@ while ($r = $by_status->fetch_assoc()) {
             <div class="row g-4 mb-4">
                 <!-- Monthly trend -->
                 <div class="col-lg-8">
-                    <div class="fc-chart-card">
-                        <div class="fc-chart-title"><i class="bi bi-bar-chart-fill" style="color:var(--fc-primary);margin-right:6px;"></i>Monthly Incidents</div>
-                        <div class="fc-chart-sub">Incident volume over the last 6 months</div>
-                        <canvas id="monthlyChart" height="100"></canvas>
+                    <div class="fc-chart-card" style="padding:0;overflow:hidden;">
+                        <div style="padding:22px 24px 0;">
+                            <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:4px;">
+                                <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--fc-muted);">Incidents Over Time</div>
+                                <span id="monthlyTrendBadge" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:3px 10px;border-radius:100px;"></span>
+                            </div>
+                            <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:2px;">
+                                <span style="font-size:32px;font-weight:800;color:var(--fc-dark);"><?= $total ?></span>
+                                <span style="font-size:13px;color:var(--fc-muted);font-weight:500;">Total cases</span>
+                            </div>
+                        </div>
+                        <div style="padding:8px 0 0;">
+                            <canvas id="monthlyChart" height="95"></canvas>
+                        </div>
                     </div>
                 </div>
                 <!-- Status donut -->
@@ -207,12 +217,6 @@ while ($r = $by_status->fetch_assoc()) {
                                 <i class="bi bi-clock-history" style="color:var(--fc-primary)"></i> Latest Incidents
                             </div>
                             <a href="manage_reports.php" class="fc-btn fc-btn-primary no-print" style="font-size:11.5px;padding:6px 14px;">View All</a>
-                        </div>
-                        <div style="padding:10px 16px 0;border-bottom:1px solid var(--fc-border);" class="no-print">
-                            <input type="text" id="dashIncidentSearch" class="fc-form-control"
-                                   placeholder="Filter by type, reporter, barangay..."
-                                   style="font-size:12.5px;padding:7px 12px;"
-                                   oninput="filterDashTable(this.value)">
                         </div>
                         <div class="fc-log-scroll">
                             <?php if ($recent->num_rows === 0): ?>
@@ -286,27 +290,76 @@ while ($r = $by_status->fetch_assoc()) {
 Chart.defaults.font.family = "'Lexend', sans-serif";
 Chart.defaults.color = '#94a3b8';
 
-// ── Monthly bar chart ──
+// ── Monthly line chart ──
+const monthlyData = <?= json_encode($month_data) ?>;
+const monthlyLabels = <?= json_encode($month_labels) ?>;
+
+// Trend badge
+const last = monthlyData[monthlyData.length - 1] ?? 0;
+const prev = monthlyData[monthlyData.length - 2] ?? 0;
+const badge = document.getElementById('monthlyTrendBadge');
+if (badge && monthlyData.length >= 2) {
+    const pct = prev === 0 ? 100 : Math.round(((last - prev) / prev) * 100);
+    const up = pct >= 0;
+    badge.textContent = (up ? '↑ +' : '↓ ') + pct + '%';
+    badge.style.background = up ? '#ecfdf5' : '#fff0f0';
+    badge.style.color = up ? '#059669' : '#e61e1e';
+}
+
 new Chart(document.getElementById('monthlyChart'), {
-    type: 'bar',
+    type: 'line',
     data: {
-        labels: <?= json_encode($month_labels) ?>,
+        labels: monthlyLabels,
         datasets: [{
             label: 'Incidents',
-            data: <?= json_encode($month_data) ?>,
-            backgroundColor: 'rgba(230,30,30,.75)',
+            data: monthlyData,
             borderColor: '#e61e1e',
-            borderWidth: 1.5,
-            borderRadius: 6,
-            borderSkipped: false,
+            borderWidth: 2.5,
+            pointBackgroundColor: '#e61e1e',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            fill: true,
+            tension: 0.45,
+            backgroundColor: function(context) {
+                const chart = context.chart;
+                const {ctx, chartArea} = chart;
+                if (!chartArea) return 'rgba(230,30,30,0.08)';
+                const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+                gradient.addColorStop(0, 'rgba(230,30,30,0.18)');
+                gradient.addColorStop(1, 'rgba(230,30,30,0.01)');
+                return gradient;
+            }
         }]
     },
     options: {
-        responsive: true, maintainAspectRatio: true,
-        plugins: { legend: { display: false } },
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                backgroundColor: '#0f172a',
+                titleFont: { family: 'Lexend', size: 11 },
+                bodyFont: { family: 'Lexend', size: 13, weight: '700' },
+                padding: 10,
+                cornerRadius: 8,
+                displayColors: false,
+                callbacks: { label: ctx => ctx.parsed.y + ' incidents' }
+            }
+        },
         scales: {
-            y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 }, grid: { color: 'rgba(0,0,0,.04)' } },
-            x: { grid: { display: false } }
+            y: {
+                beginAtZero: true,
+                ticks: { stepSize: 1, precision: 0, font: { size: 11 } },
+                grid: { color: 'rgba(0,0,0,.04)' },
+                border: { display: false }
+            },
+            x: {
+                grid: { display: false },
+                ticks: { font: { size: 11 } },
+                border: { display: false }
+            }
         }
     }
 });
@@ -357,13 +410,6 @@ new Chart(document.getElementById('typeChart'), {
         }
     }
 });
-// ── Dashboard incident table quick filter ──
-function filterDashTable(q) {
-    q = q.toLowerCase();
-    document.querySelectorAll('.fc-table tbody tr').forEach(row => {
-        row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
-    });
-}
 </script>
 
 <?php include '../includes/footer.php'; ?>

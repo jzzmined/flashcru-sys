@@ -366,7 +366,7 @@ $cnt_total    = $cnt_active + $cnt_inactive;
 </div>
 <?php endforeach; ?>
 
-<script>
+<script>    
 function openUserDetail(id) {
     document.getElementById('userDetail' + id).classList.add('open');
     document.body.style.overflow = 'hidden';
