@@ -9,9 +9,7 @@ $msg = $err = '';
 if (isset($_GET['toggle'])) {
     $uid    = (int)$_GET['toggle'];
     $newst  = $_GET['to'] === 'active' ? 'active' : 'inactive';
-    $stmt = $conn->prepare("UPDATE users SET status=? WHERE user_id=? AND role='user'");
-    $stmt->bind_param("si", $newst, $uid);
-    $stmt->execute();
+    $conn->query("UPDATE users SET status='$newst' WHERE user_id=$uid AND role='user'");
     logActivity($_SESSION['user_id'], "Set user #$uid status to $newst");
     $msg = "User status updated to " . ucfirst($newst) . ".";
 }
@@ -23,19 +21,15 @@ if (isset($_GET['delete'])) {
     if ($used > 0) {
         $err = "Cannot delete — this user has $used incident report(s). Deactivate them instead.";
     } else {
-        $stmt = $conn->prepare("DELETE FROM users WHERE user_id=? AND role='user'");
-        $stmt->bind_param("i", $uid);
-        $stmt->execute();
+        $conn->query("DELETE FROM users WHERE user_id=$uid AND role='user'");
         logActivity($_SESSION['user_id'], "Deleted user #$uid");
         $msg = "User deleted.";
     }
 }
 
-
-
 // Search & filter
-$search  = sanitize($_GET['search'] ?? '');
-$status_f = sanitize($_GET['status'] ?? '');
+$search   = sanitize($_GET['search'] ?? '');
+$status_f = in_array($_GET['status'] ?? '', ['active', 'inactive']) ? $_GET['status'] : '';
 
 $where = "WHERE u.role = 'user'";
 if ($search)   $where .= " AND (u.full_name LIKE '%$search%' OR u.email LIKE '%$search%' OR u.contact_number LIKE '%$search%')";
@@ -45,7 +39,7 @@ if ($status_f) $where .= " AND u.status = '$status_f'";
 $per_page = 15;
 $page     = max(1, (int)($_GET['page'] ?? 1));
 $offset   = ($page - 1) * $per_page;
-
+    
 $total_count = (int)$conn->query("SELECT COUNT(*) c FROM users u $where")->fetch_assoc()['c'];
 $total_pages = max(1, ceil($total_count / $per_page));
 
@@ -366,7 +360,7 @@ $cnt_total    = $cnt_active + $cnt_inactive;
 </div>
 <?php endforeach; ?>
 
-<script>    
+<script>
 function openUserDetail(id) {
     document.getElementById('userDetail' + id).classList.add('open');
     document.body.style.overflow = 'hidden';

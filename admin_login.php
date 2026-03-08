@@ -27,6 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['email']   = $user['email'];
                 $_SESSION['role']    = 'admin';
                 logActivity($user['user_id'], 'Admin logged in');
+                $conn->query("UPDATE users SET last_login = NOW() WHERE user_id = {$user['user_id']}");
                 redirect('admin/dashboard.php');
             } else {
                 $error = 'Invalid credentials.';

@@ -28,6 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['email']   = $user['email'];
                 $_SESSION['role']    = 'user';
                 logActivity($user['user_id'], 'User logged in');
+                $conn->query("UPDATE users SET last_login = NOW() WHERE user_id = {$user['user_id']}");
                 redirect('user/dashboard.php');
             }
         } else {
