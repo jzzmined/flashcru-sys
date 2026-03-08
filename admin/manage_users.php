@@ -7,11 +7,20 @@ $msg = $err = '';
 
 // Toggle user status
 if (isset($_GET['toggle'])) {
-    $uid    = (int)$_GET['toggle'];
-    $newst  = $_GET['to'] === 'active' ? 'active' : 'inactive';
-    $conn->query("UPDATE users SET status='$newst' WHERE user_id=$uid AND role='user'");
+    $uid   = (int)$_GET['toggle'];
+    $newst = ($_GET['to'] ?? '') === 'active' ? 'active' : 'inactive';
+    $stmt  = $conn->prepare("UPDATE users SET status=? WHERE user_id=? AND role='user'");
+    $stmt->bind_param("si", $newst, $uid);
+    $stmt->execute();
     logActivity($_SESSION['user_id'], "Set user #$uid status to $newst");
-    $msg = "User status updated to " . ucfirst($newst) . ".";
+    $qs = http_build_query(array_filter([
+        'msg'    => 'toggled',
+        'search' => $_GET['search'] ?? '',
+        'status' => $_GET['status'] ?? '',
+        'page'   => $_GET['page']   ?? '',
+    ]));
+    header("Location: manage_users.php" . ($qs ? "?$qs" : ''));
+    exit;
 }
 
 // Delete user (only if no incidents)
@@ -21,10 +30,25 @@ if (isset($_GET['delete'])) {
     if ($used > 0) {
         $err = "Cannot delete — this user has $used incident report(s). Deactivate them instead.";
     } else {
-        $conn->query("DELETE FROM users WHERE user_id=$uid AND role='user'");
+        $stmt = $conn->prepare("DELETE FROM users WHERE user_id=? AND role='user'");
+        $stmt->bind_param("i", $uid);
+        $stmt->execute();
         logActivity($_SESSION['user_id'], "Deleted user #$uid");
-        $msg = "User deleted.";
+        $qs = http_build_query(array_filter([
+            'msg'    => 'deleted',
+            'search' => $_GET['search'] ?? '',
+            'status' => $_GET['status'] ?? '',
+            'page'   => $_GET['page']   ?? '',
+        ]));
+        header("Location: manage_users.php" . ($qs ? "?$qs" : ''));
+        exit;
     }
+}
+
+// Messages from redirect
+if (isset($_GET['msg'])) {
+    if ($_GET['msg'] === 'toggled') $msg = 'User status updated successfully.';
+    if ($_GET['msg'] === 'deleted') $msg = 'User deleted successfully.';
 }
 
 // Search & filter
@@ -167,6 +191,7 @@ $cnt_total    = $cnt_active + $cnt_inactive;
                                 <th>Reports</th>
                                 <th>Last Report</th>
                                 <th>Joined</th>
+                                <th>Last Login</th>
                                 <th>Status</th>
                                 <th>Actions</th>
                             </tr>
@@ -197,6 +222,9 @@ $cnt_total    = $cnt_active + $cnt_inactive;
                                 </td>
                                 <td style="font-size:12px;color:var(--fc-muted);white-space:nowrap;">
                                     <?= date('M d, Y', strtotime($u['created_at'])) ?>
+                                </td>
+                                <td style="font-size:12px;color:var(--fc-muted);white-space:nowrap;">
+                                    <?= $u['last_login'] ? date('M d, Y', strtotime($u['last_login'])) : '<span style="color:#cbd5e1;">Never</span>' ?>
                                 </td>
                                 <td>
                                     <?php if ($u['status'] === 'active'): ?>
@@ -309,6 +337,7 @@ $cnt_total    = $cnt_active + $cnt_inactive;
             <div class="ir-detail-row"><span>Email</span><strong><?= htmlspecialchars($u['email']) ?></strong></div>
             <div class="ir-detail-row"><span>Phone</span><strong><?= htmlspecialchars($u['contact_number'] ?? '—') ?></strong></div>
             <div class="ir-detail-row"><span>Joined</span><strong><?= date('F j, Y', strtotime($u['created_at'])) ?></strong></div>
+            <div class="ir-detail-row"><span>Last Login</span><strong><?= $u['last_login'] ? date('F j, Y g:i A', strtotime($u['last_login'])) : 'Never' ?></strong></div>
             <div class="ir-detail-row"><span>Total Reports</span>
                 <strong style="color:var(--fc-primary);"><?= $u['incident_count'] ?></strong>
             </div>
