@@ -34,7 +34,6 @@ $log = $conn->query("
 if (!$log) die("Log query failed: " . $conn->error);
 
 // --- Analytics data ---
-// Incidents by type
 $by_type = $conn->query("
     SELECT it.name, COUNT(i.id) AS cnt
     FROM incident_types it
@@ -44,7 +43,6 @@ $by_type = $conn->query("
 $type_labels = $type_data = [];
 while ($r = $by_type->fetch_assoc()) { $type_labels[] = $r['name']; $type_data[] = $r['cnt']; }
 
-// Incidents per month (last 6 months)
 $by_month = $conn->query("
     SELECT DATE_FORMAT(created_at, '%b %Y') AS mo, COUNT(*) AS cnt
     FROM incidents
@@ -55,7 +53,6 @@ $by_month = $conn->query("
 $month_labels = $month_data = [];
 while ($r = $by_month->fetch_assoc()) { $month_labels[] = $r['mo']; $month_data[] = $r['cnt']; }
 
-// Status distribution
 $by_status = $conn->query("
     SELECT status_id, COUNT(*) cnt FROM incidents GROUP BY status_id
 ");
@@ -67,8 +64,184 @@ while ($r = $by_status->fetch_assoc()) {
     $st_data[]   = $r['cnt'];
     $st_colors[] = $status_colors[$r['status_id']] ?? '#ccc';
 }
+
+// ── ADMIN NOTIFICATIONS: last changes in the system (past 24 hours) ──
+$notifs = [];
+
+// 1. New incidents reported in last 24h
+$new_inc = $conn->query("
+    SELECT COUNT(*) AS cnt FROM incidents
+    WHERE created_at >= NOW() - INTERVAL 24 HOUR
+");
+$new_inc_count = $new_inc ? (int)$new_inc->fetch_assoc()['cnt'] : 0;
+if ($new_inc_count > 0) {
+    $notifs[] = [
+        'icon'  => 'bi-file-earmark-plus-fill',
+        'color' => '#e61e1e',
+        'label' => 'New Reports',
+        'text'  => "<strong>{$new_inc_count} new incident report" . ($new_inc_count > 1 ? 's' : '') . "</strong> submitted in the last 24 hours.",
+        'time'  => 'Last 24 hours',
+    ];
+}
+
+// 2. Incidents with team assignment in last 24h
+$assigned_q = $conn->query("
+    SELECT i.id, it.name AS type_name, t.team_name, i.updated_at
+    FROM incidents i
+    LEFT JOIN incident_types it ON i.incident_type_id = it.id
+    LEFT JOIN teams t ON i.assigned_team_id = t.team_id
+    WHERE i.status_id IN (2,3)
+      AND i.updated_at >= NOW() - INTERVAL 24 HOUR
+      AND i.assigned_team_id IS NOT NULL
+    ORDER BY i.updated_at DESC
+    LIMIT 1
+");
+if ($assigned_q && $assigned_q->num_rows > 0) {
+    $a = $assigned_q->fetch_assoc();
+    $notifs[] = [
+        'icon'  => 'bi-people-fill',
+        'color' => '#f59e0b',
+        'label' => 'Team Assigned',
+        'text'  => "Report <strong>#" . $a['id'] . " (" . htmlspecialchars($a['type_name']) . ")</strong> was assigned to team <strong>" . htmlspecialchars($a['team_name']) . "</strong>.",
+        'time'  => date('M d, Y \a\t h:i A', strtotime($a['updated_at'])),
+    ];
+}
+
+// 3. Incidents resolved in last 24h
+$res_q = $conn->query("
+    SELECT COUNT(*) AS cnt FROM incidents
+    WHERE status_id = 4
+      AND updated_at >= NOW() - INTERVAL 24 HOUR
+");
+$res_count = $res_q ? (int)$res_q->fetch_assoc()['cnt'] : 0;
+if ($res_count > 0) {
+    $notifs[] = [
+        'icon'  => 'bi-check-circle-fill',
+        'color' => '#22c55e',
+        'label' => 'Resolved',
+        'text'  => "<strong>{$res_count} incident" . ($res_count > 1 ? 's' : '') . "</strong> marked as <strong>Resolved</strong> in the last 24 hours.",
+        'time'  => 'Last 24 hours',
+    ];
+}
+
+// 4. New users registered in last 24h
+$new_users_q = $conn->query("
+    SELECT COUNT(*) AS cnt FROM users
+    WHERE role='user' AND created_at >= NOW() - INTERVAL 24 HOUR
+");
+$new_users_count = $new_users_q ? (int)$new_users_q->fetch_assoc()['cnt'] : 0;
+if ($new_users_count > 0) {
+    $notifs[] = [
+        'icon'  => 'bi-person-plus-fill',
+        'color' => '#8b5cf6',
+        'label' => 'New Users',
+        'text'  => "<strong>{$new_users_count} new user" . ($new_users_count > 1 ? 's' : '') . "</strong> registered in the last 24 hours.",
+        'time'  => 'Last 24 hours',
+    ];
+}
 ?>
 <?php include '../includes/header.php'; ?>
+
+<style>
+/* ── Admin Notification Banner ── */
+.fc-admin-notifs {
+    margin-bottom: 22px;
+}
+.fc-admin-notif-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+.fc-admin-notif-header-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--fc-muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.fc-admin-notif-dismiss-all {
+    font-size: 11.5px;
+    color: var(--fc-muted);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+}
+.fc-admin-notif-dismiss-all:hover { color: var(--fc-primary); }
+
+.fc-notif-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+.fc-notif-banner {
+    flex: 1 1 260px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    background: #fff;
+    border-left: 4px solid var(--notif-color, #3b82f6);
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    padding: 13px 16px;
+    position: relative;
+    animation: fc-slide-in 0.35s ease both;
+}
+.fc-notif-banner:nth-child(2) { animation-delay: .07s; }
+.fc-notif-banner:nth-child(3) { animation-delay: .14s; }
+.fc-notif-banner:nth-child(4) { animation-delay: .21s; }
+
+@keyframes fc-slide-in {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.fc-notif-icon-wrap {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 14px;
+    color: #fff;
+    background: var(--notif-color, #3b82f6);
+}
+.fc-notif-body { flex: 1; min-width: 0; }
+.fc-notif-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: var(--notif-color, #3b82f6);
+    margin-bottom: 2px;
+}
+.fc-notif-text {
+    font-size: 13px;
+    color: #374151;
+    line-height: 1.45;
+}
+.fc-notif-time {
+    font-size: 11px;
+    color: #9ca3af;
+    margin-top: 3px;
+}
+.fc-notif-close {
+    background: none;
+    border: none;
+    color: #9ca3af;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 0 2px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+.fc-notif-close:hover { color: #374151; }
+</style>
 
 <div class="fc-app">
     <?php include '../includes/sidebar.php'; ?>
@@ -83,7 +256,6 @@ while ($r = $by_status->fetch_assoc()) {
                 </div>
             </div>
             <div class="fc-topbar-right">
-                <!-- Print button -->
                 <button onclick="window.print()" class="fc-btn no-print" style="background:#fff;border:1.5px solid var(--fc-border);color:var(--fc-text-2);font-size:13px;padding:8px 16px;">
                     <i class="bi bi-printer-fill"></i> Print Report
                 </button>
@@ -99,7 +271,7 @@ while ($r = $by_status->fetch_assoc()) {
                     <div style="font-family:Lexend,sans-serif;font-weight:800;font-size:19px;color:#fff;margin-bottom:4px;">FlashCru Control Center</div>
                     <div style="color:rgba(255,255,255,.45);font-size:12px;"><?= date('l, F j, Y \a\t g:i A') ?></div>
                 </div>
-                <div style="display:flex;gap:10px;flex-wrap:wrap;position:relative;z-index:1;no-print">
+                <div style="display:flex;gap:10px;flex-wrap:wrap;position:relative;z-index:1;">
                     <a href="manage_reports.php" class="fc-btn fc-btn-primary no-print" style="font-size:13px;padding:10px 20px;">
                         <i class="bi bi-file-earmark-text-fill"></i> View Reports
                     </a>
@@ -108,6 +280,38 @@ while ($r = $by_status->fetch_assoc()) {
                     </a>
                 </div>
             </div>
+
+            <!-- ── ADMIN NOTIFICATION BANNERS ── -->
+            <?php if (!empty($notifs)): ?>
+            <div class="fc-admin-notifs" id="fcAdminNotifs">
+                <div class="fc-admin-notif-header">
+                    <div class="fc-admin-notif-header-title">
+                        <i class="bi bi-bell-fill" style="color:var(--fc-primary)"></i>
+                        System Updates &mdash; Last 24 Hours
+                    </div>
+                    <button class="fc-admin-notif-dismiss-all" onclick="document.getElementById('fcAdminNotifs').style.display='none'">
+                        Dismiss all <i class="bi bi-x"></i>
+                    </button>
+                </div>
+                <div class="fc-notif-row">
+                    <?php foreach ($notifs as $i => $n): ?>
+                    <div class="fc-notif-banner" id="fcNotif<?= $i ?>" style="--notif-color:<?= $n['color'] ?>">
+                        <div class="fc-notif-icon-wrap">
+                            <i class="bi <?= $n['icon'] ?>"></i>
+                        </div>
+                        <div class="fc-notif-body">
+                            <div class="fc-notif-label"><?= $n['label'] ?></div>
+                            <div class="fc-notif-text"><?= $n['text'] ?></div>
+                            <div class="fc-notif-time"><i class="bi bi-clock me-1"></i><?= $n['time'] ?></div>
+                        </div>
+                        <button class="fc-notif-close" onclick="document.getElementById('fcNotif<?= $i ?>').style.display='none'" title="Dismiss">
+                            <i class="bi bi-x"></i>
+                        </button>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <?php endif; ?>
 
             <!-- Stat cards row 1 -->
             <div class="row g-3 mb-3">
@@ -290,20 +494,18 @@ while ($r = $by_status->fetch_assoc()) {
 Chart.defaults.font.family = "'Lexend', sans-serif";
 Chart.defaults.color = '#94a3b8';
 
-// ── Monthly line chart ──
-const monthlyData = <?= json_encode($month_data) ?>;
+const monthlyData   = <?= json_encode($month_data) ?>;
 const monthlyLabels = <?= json_encode($month_labels) ?>;
 
-// Trend badge
-const last = monthlyData[monthlyData.length - 1] ?? 0;
-const prev = monthlyData[monthlyData.length - 2] ?? 0;
+const last  = monthlyData[monthlyData.length - 1] ?? 0;
+const prev  = monthlyData[monthlyData.length - 2] ?? 0;
 const badge = document.getElementById('monthlyTrendBadge');
 if (badge && monthlyData.length >= 2) {
     const pct = prev === 0 ? 100 : Math.round(((last - prev) / prev) * 100);
-    const up = pct >= 0;
+    const up  = pct >= 0;
     badge.textContent = (up ? '↑ +' : '↓ ') + pct + '%';
     badge.style.background = up ? '#ecfdf5' : '#fff0f0';
-    badge.style.color = up ? '#059669' : '#e61e1e';
+    badge.style.color      = up ? '#059669' : '#e61e1e';
 }
 
 new Chart(document.getElementById('monthlyChart'), {
@@ -334,58 +536,36 @@ new Chart(document.getElementById('monthlyChart'), {
         }]
     },
     options: {
-        responsive: true,
-        maintainAspectRatio: true,
+        responsive: true, maintainAspectRatio: true,
         plugins: {
             legend: { display: false },
             tooltip: {
                 backgroundColor: '#0f172a',
                 titleFont: { family: 'Lexend', size: 11 },
-                bodyFont: { family: 'Lexend', size: 13, weight: '700' },
-                padding: 10,
-                cornerRadius: 8,
-                displayColors: false,
+                bodyFont:  { family: 'Lexend', size: 13, weight: '700' },
+                padding: 10, cornerRadius: 8, displayColors: false,
                 callbacks: { label: ctx => ctx.parsed.y + ' incidents' }
             }
         },
         scales: {
-            y: {
-                beginAtZero: true,
-                ticks: { stepSize: 1, precision: 0, font: { size: 11 } },
-                grid: { color: 'rgba(0,0,0,.04)' },
-                border: { display: false }
-            },
-            x: {
-                grid: { display: false },
-                ticks: { font: { size: 11 } },
-                border: { display: false }
-            }
+            y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0, font: { size: 11 } }, grid: { color: 'rgba(0,0,0,.04)' }, border: { display: false } },
+            x: { grid: { display: false }, ticks: { font: { size: 11 } }, border: { display: false } }
         }
     }
 });
 
-// ── Status donut ──
 new Chart(document.getElementById('statusChart'), {
     type: 'doughnut',
     data: {
         labels: <?= json_encode($st_labels) ?>,
-        datasets: [{
-            data: <?= json_encode($st_data) ?>,
-            backgroundColor: <?= json_encode($st_colors) ?>,
-            borderWidth: 0,
-            hoverOffset: 6,
-        }]
+        datasets: [{ data: <?= json_encode($st_data) ?>, backgroundColor: <?= json_encode($st_colors) ?>, borderWidth: 0, hoverOffset: 6 }]
     },
     options: {
-        responsive: true, maintainAspectRatio: true,
-        cutout: '68%',
-        plugins: {
-            legend: { position: 'bottom', labels: { padding: 16, boxWidth: 12, font: { size: 12 } } }
-        }
+        responsive: true, maintainAspectRatio: true, cutout: '68%',
+        plugins: { legend: { position: 'bottom', labels: { padding: 16, boxWidth: 12, font: { size: 12 } } } }
     }
 });
 
-// ── Incidents by type horizontal bar ──
 new Chart(document.getElementById('typeChart'), {
     type: 'bar',
     data: {
@@ -401,8 +581,7 @@ new Chart(document.getElementById('typeChart'), {
         }]
     },
     options: {
-        indexAxis: 'y',
-        responsive: true, maintainAspectRatio: true,
+        indexAxis: 'y', responsive: true, maintainAspectRatio: true,
         plugins: { legend: { display: false } },
         scales: {
             x: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: 'rgba(0,0,0,.04)' } },
