@@ -1,4 +1,16 @@
 <?php
+// AJAX poll — must be first to avoid "headers already sent"
+if (isset($_GET['poll'])) {
+    header('Content-Type: application/json');
+    $uid = (int) $_SESSION['user_id'];
+    $rows = $conn->query("SELECT id, status_id FROM incidents WHERE user_id=$uid ORDER BY created_at DESC LIMIT 20");
+    $out = [];
+    while ($r = $rows->fetch_assoc()) $out[] = $r;
+    echo json_encode($out);
+    exit;
+}
+?>
+<?php
 require_once '../includes/auth_user.php';
 require_once '../includes/db_connect.php';
 require_once '../includes/functions.php';
@@ -494,16 +506,5 @@ setInterval(checkStatusUpdates, 30000);
 <?php endif; ?>
 </script>
 
-<?php
-// Handle AJAX poll request
-if (isset($_GET['poll'])) {
-    $rows = $conn->query("SELECT id, status_id FROM incidents WHERE user_id=$uid ORDER BY created_at DESC LIMIT 20");
-    $out = [];
-    while ($r = $rows->fetch_assoc()) $out[] = $r;
-    header('Content-Type: application/json');
-    echo json_encode($out);
-    exit;
-}
-?>
 
 <?php include '../includes/footer.php'; ?>

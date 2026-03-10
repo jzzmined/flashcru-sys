@@ -91,7 +91,10 @@ while ($r = $barangays->fetch_assoc())
                     <div class="fc-breadcrumb">Admin / Manage Barangays</div>
                 </div>
             </div>
-            <div class="fc-topbar-right">
+            <div class="fc-topbar-right" style="display:flex;align-items:center;gap:12px;">
+                <a href="dashboard.php" class="fc-bell-btn" title="Notifications" style="text-decoration:none;">
+                    <i class="bi bi-bell-fill"></i>
+                </a>
                 <span style="font-size:13px;color:var(--fc-muted);font-family:'Lexend',sans-serif;">
                     <?= $total_count ?> total barangay<?= $total_count != 1 ? 's' : '' ?>
                 </span>

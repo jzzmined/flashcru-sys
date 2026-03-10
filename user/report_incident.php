@@ -71,7 +71,11 @@ $barangays = $conn->query("SELECT id, name FROM barangays ORDER BY name");
                     <div class="fc-breadcrumb">User / Report New Incident</div>
                 </div>
             </div>
-            <div class="fc-topbar-right"></div>
+            <div class="fc-topbar-right">
+                <a href="dashboard.php" class="fc-bell-btn" title="Notifications" style="text-decoration:none;">
+                    <i class="bi bi-bell-fill"></i>
+                </a>
+            </div>
         </div>
 
         <div class="fc-content">

@@ -640,7 +640,7 @@ body.sidebar-collapsed .fc-main { margin-left: 68px; }
   border-bottom: 1px solid var(--fc-border);
   padding: 0 28px;
   display: flex; align-items: center; justify-content: space-between;
-  position: sticky; top: 0; z-index: 200;
+  position: sticky; top: 0; z-index: 300;
 }
 .fc-topbar-left  { display: flex; align-items: center; gap: 14px; }
 .fc-topbar-right { display: flex; align-items: center; gap: 12px; }
@@ -1052,3 +1052,131 @@ body.sidebar-collapsed .fc-main { margin-left: 68px; }
   animation: toastIn .25s cubic-bezier(.4,0,.2,1);
 }
 @keyframes toastIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+/* =====================================================
+   BELL NOTIFICATION DROPDOWN
+   ===================================================== */
+.fc-bell-wrap { position: relative; z-index: 99999; }
+
+.fc-bell-btn {
+  position: relative;
+  background: var(--fc-bg);
+  border: 1.5px solid var(--fc-border);
+  border-radius: var(--fc-radius-sm);
+  width: 40px; height: 40px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 17px; color: var(--fc-text-2);
+  cursor: pointer; transition: var(--fc-transition);
+  padding: 0;
+}
+.fc-bell-btn:hover {
+  border-color: var(--fc-primary);
+  color: var(--fc-primary);
+  background: var(--fc-primary-lt);
+}
+.fc-bell-badge {
+  position: absolute; top: -5px; right: -5px;
+  background: var(--fc-primary); color: #fff;
+  font-size: 10px; font-weight: 800;
+  border-radius: 100px; min-width: 18px; height: 18px;
+  display: flex; align-items: center; justify-content: center;
+  padding: 0 4px; border: 2px solid #fff;
+  animation: fc-bell-pulse 1.8s infinite;
+  font-family: 'Lexend', sans-serif;
+}
+@keyframes fc-bell-pulse {
+  0%,100% { transform: scale(1); }
+  50%      { transform: scale(1.18); }
+}
+.fc-bell-dropdown {
+  display: none;
+  position: fixed;
+  top: 66px;
+  right: 20px;
+  width: 315px;
+  background: #fff;
+  border-radius: var(--fc-radius);
+  border: 1px solid var(--fc-border);
+  box-shadow: 0 8px 40px rgba(0,0,0,0.18);
+  z-index: 999999;
+  overflow: hidden;
+}
+.fc-bell-dropdown.open {
+  display: block;
+  animation: fc-drop-in .2s cubic-bezier(.4,0,.2,1);
+}
+@keyframes fc-drop-in {
+  from { opacity:0; transform:translateY(-8px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+.fc-bell-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 16px 11px;
+  font-family: 'Lexend', sans-serif; font-size: 13px; font-weight: 700;
+  color: var(--fc-dark); border-bottom: 1px solid var(--fc-border);
+}
+.fc-bell-count {
+  font-size: 11px; font-weight: 700;
+  background: var(--fc-primary-lt); color: var(--fc-primary);
+  border-radius: 100px; padding: 2px 9px;
+  font-family: 'Lexend', sans-serif;
+}
+.fc-bell-body { max-height: 300px; overflow-y: auto; }
+.fc-bell-empty {
+  text-align: center; padding: 28px 16px;
+  color: var(--fc-muted); font-size: 13px;
+}
+.fc-bell-empty i { font-size: 28px; display: block; margin-bottom: 6px; opacity: .5; }
+.fc-bell-item {
+  display: flex; gap: 11px; align-items: flex-start;
+  padding: 12px 16px; border-bottom: 1px solid var(--fc-border-2);
+  transition: background .15s;
+}
+.fc-bell-item:last-child { border-bottom: none; }
+.fc-bell-item:hover { background: var(--fc-bg); }
+.fc-bell-item-icon {
+  width: 34px; height: 34px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; flex-shrink: 0;
+}
+.fc-bell-item-body { flex: 1; min-width: 0; }
+.fc-bell-item-title {
+  font-size: 12.5px; color: var(--fc-dark);
+  line-height: 1.4; font-family: 'Lexend', sans-serif;
+}
+.fc-bell-item-sub  { font-size: 11.5px; color: var(--fc-muted); margin-top: 2px; }
+.fc-bell-item-time {
+  font-size: 11px; color: var(--fc-muted); margin-top: 3px;
+  display: flex; align-items: center; gap: 4px;
+}
+.fc-bell-footer {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 11px 16px; font-size: 12.5px; font-weight: 600;
+  color: var(--fc-primary); text-decoration: none;
+  border-top: 1px solid var(--fc-border);
+  font-family: 'Lexend', sans-serif; transition: background .15s;
+}
+.fc-bell-footer:hover { background: var(--fc-primary-lt); }
+
+/* ── Bell backdrop (closes dropdown when clicking outside) ── */
+.fc-bell-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 99998;
+  background: transparent;
+}
+.fc-bell-backdrop.open { display: block; }
+
+/* ── Bell clear button ── */
+.fc-bell-clear-btn {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: none; border: 1px solid var(--fc-border);
+  border-radius: 6px; padding: 3px 9px;
+  font-size: 11px; font-weight: 600; color: var(--fc-muted);
+  cursor: pointer; font-family: 'Lexend', sans-serif;
+  transition: all .15s;
+}
+.fc-bell-clear-btn:hover {
+  background: #fff0f0; border-color: var(--fc-primary);
+  color: var(--fc-primary);
+}

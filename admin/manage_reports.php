@@ -128,7 +128,10 @@ if (!empty($all_rows)) {
                     <div class="fc-breadcrumb">Admin / Incident Reports</div>
                 </div>
             </div>
-            <div class="fc-topbar-right no-print">
+            <div class="fc-topbar-right no-print" style="display:flex;align-items:center;gap:12px;">
+                <a href="dashboard.php" class="fc-bell-btn" title="Notifications" style="text-decoration:none;">
+                    <i class="bi bi-bell-fill"></i>
+                </a>
                 <button onclick="window.print()" class="fc-btn" style="background:#fff;border:1.5px solid var(--fc-border);color:var(--fc-text-2);font-size:13px;padding:8px 16px;">
                     <i class="bi bi-printer-fill"></i> Print / Export
                 </button>

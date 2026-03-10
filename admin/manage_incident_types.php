@@ -78,7 +78,11 @@ $types = $conn->query("
                     <div class="fc-breadcrumb">Admin / Manage Incident Types</div>
                 </div>
             </div>
-            <div class="fc-topbar-right"></div>
+            <div class="fc-topbar-right">
+                <a href="dashboard.php" class="fc-bell-btn" title="Notifications" style="text-decoration:none;">
+                    <i class="bi bi-bell-fill"></i>
+                </a>
+            </div>
         </div>
 
         <div class="fc-content">
@@ -212,4 +216,4 @@ $types = $conn->query("
     </div>
 </div>
 
-<?php include '../includes/footer.php'; ?>
+<?php include '../includes/footer.php'; ?>  

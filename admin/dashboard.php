@@ -65,183 +65,29 @@ while ($r = $by_status->fetch_assoc()) {
     $st_colors[] = $status_colors[$r['status_id']] ?? '#ccc';
 }
 
-// ── ADMIN NOTIFICATIONS: last changes in the system (past 24 hours) ──
-$notifs = [];
-
-// 1. New incidents reported in last 24h
-$new_inc = $conn->query("
-    SELECT COUNT(*) AS cnt FROM incidents
-    WHERE created_at >= NOW() - INTERVAL 24 HOUR
-");
-$new_inc_count = $new_inc ? (int)$new_inc->fetch_assoc()['cnt'] : 0;
-if ($new_inc_count > 0) {
-    $notifs[] = [
-        'icon'  => 'bi-file-earmark-plus-fill',
-        'color' => '#e61e1e',
-        'label' => 'New Reports',
-        'text'  => "<strong>{$new_inc_count} new incident report" . ($new_inc_count > 1 ? 's' : '') . "</strong> submitted in the last 24 hours.",
-        'time'  => 'Last 24 hours',
-    ];
-}
-
-// 2. Incidents with team assignment in last 24h
-$assigned_q = $conn->query("
-    SELECT i.id, it.name AS type_name, t.team_name, i.updated_at
+// ── ADMIN NOTIFICATION: New incidents submitted by users (unattended = still pending) ──
+$new_incidents_q = $conn->query("
+    SELECT i.id, it.name AS type_name, u.full_name AS reporter,
+           b.name AS barangay, i.created_at
     FROM incidents i
     LEFT JOIN incident_types it ON i.incident_type_id = it.id
-    LEFT JOIN teams t ON i.assigned_team_id = t.team_id
-    WHERE i.status_id IN (2,3)
-      AND i.updated_at >= NOW() - INTERVAL 24 HOUR
-      AND i.assigned_team_id IS NOT NULL
-    ORDER BY i.updated_at DESC
-    LIMIT 1
+    LEFT JOIN users           u  ON i.user_id = u.user_id
+    LEFT JOIN barangays       b  ON i.barangay_id = b.id
+    WHERE i.status_id = 1
+    ORDER BY i.created_at DESC
+    LIMIT 3
 ");
-if ($assigned_q && $assigned_q->num_rows > 0) {
-    $a = $assigned_q->fetch_assoc();
-    $notifs[] = [
-        'icon'  => 'bi-people-fill',
-        'color' => '#f59e0b',
-        'label' => 'Team Assigned',
-        'text'  => "Report <strong>#" . $a['id'] . " (" . htmlspecialchars($a['type_name']) . ")</strong> was assigned to team <strong>" . htmlspecialchars($a['team_name']) . "</strong>.",
-        'time'  => date('M d, Y \a\t h:i A', strtotime($a['updated_at'])),
-    ];
+$new_incidents = [];
+if ($new_incidents_q) {
+    while ($row = $new_incidents_q->fetch_assoc()) {
+        $new_incidents[] = $row;
+    }
 }
-
-// 3. Incidents resolved in last 24h
-$res_q = $conn->query("
-    SELECT COUNT(*) AS cnt FROM incidents
-    WHERE status_id = 4
-      AND updated_at >= NOW() - INTERVAL 24 HOUR
-");
-$res_count = $res_q ? (int)$res_q->fetch_assoc()['cnt'] : 0;
-if ($res_count > 0) {
-    $notifs[] = [
-        'icon'  => 'bi-check-circle-fill',
-        'color' => '#22c55e',
-        'label' => 'Resolved',
-        'text'  => "<strong>{$res_count} incident" . ($res_count > 1 ? 's' : '') . "</strong> marked as <strong>Resolved</strong> in the last 24 hours.",
-        'time'  => 'Last 24 hours',
-    ];
-}
-
-// 4. New users registered in last 24h
-$new_users_q = $conn->query("
-    SELECT COUNT(*) AS cnt FROM users
-    WHERE role='user' AND created_at >= NOW() - INTERVAL 24 HOUR
-");
-$new_users_count = $new_users_q ? (int)$new_users_q->fetch_assoc()['cnt'] : 0;
-if ($new_users_count > 0) {
-    $notifs[] = [
-        'icon'  => 'bi-person-plus-fill',
-        'color' => '#8b5cf6',
-        'label' => 'New Users',
-        'text'  => "<strong>{$new_users_count} new user" . ($new_users_count > 1 ? 's' : '') . "</strong> registered in the last 24 hours.",
-        'time'  => 'Last 24 hours',
-    ];
-}
+$new_pending_total = count($new_incidents);
 ?>
 <?php include '../includes/header.php'; ?>
 
-<style>
-/* ── Admin Notification Banner ── */
-.fc-admin-notifs {
-    margin-bottom: 22px;
-}
-.fc-admin-notif-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 10px;
-}
-.fc-admin-notif-header-title {
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: .08em;
-    text-transform: uppercase;
-    color: var(--fc-muted);
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-.fc-admin-notif-dismiss-all {
-    font-size: 11.5px;
-    color: var(--fc-muted);
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 0;
-}
-.fc-admin-notif-dismiss-all:hover { color: var(--fc-primary); }
 
-.fc-notif-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-}
-.fc-notif-banner {
-    flex: 1 1 260px;
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    background: #fff;
-    border-left: 4px solid var(--notif-color, #3b82f6);
-    border-radius: 10px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
-    padding: 13px 16px;
-    position: relative;
-    animation: fc-slide-in 0.35s ease both;
-}
-.fc-notif-banner:nth-child(2) { animation-delay: .07s; }
-.fc-notif-banner:nth-child(3) { animation-delay: .14s; }
-.fc-notif-banner:nth-child(4) { animation-delay: .21s; }
-
-@keyframes fc-slide-in {
-    from { opacity: 0; transform: translateY(-6px); }
-    to   { opacity: 1; transform: translateY(0); }
-}
-.fc-notif-icon-wrap {
-    width: 34px;
-    height: 34px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    font-size: 14px;
-    color: #fff;
-    background: var(--notif-color, #3b82f6);
-}
-.fc-notif-body { flex: 1; min-width: 0; }
-.fc-notif-label {
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: .07em;
-    text-transform: uppercase;
-    color: var(--notif-color, #3b82f6);
-    margin-bottom: 2px;
-}
-.fc-notif-text {
-    font-size: 13px;
-    color: #374151;
-    line-height: 1.45;
-}
-.fc-notif-time {
-    font-size: 11px;
-    color: #9ca3af;
-    margin-top: 3px;
-}
-.fc-notif-close {
-    background: none;
-    border: none;
-    color: #9ca3af;
-    font-size: 16px;
-    cursor: pointer;
-    padding: 0 2px;
-    line-height: 1;
-    flex-shrink: 0;
-}
-.fc-notif-close:hover { color: #374151; }
-</style>
 
 <div class="fc-app">
     <?php include '../includes/sidebar.php'; ?>
@@ -255,7 +101,59 @@ if ($new_users_count > 0) {
                     <div class="fc-breadcrumb">FlashCru / Control Center</div>
                 </div>
             </div>
-            <div class="fc-topbar-right">
+            <div class="fc-topbar-right" >
+
+                <!-- 🔔 Bell Notification Dropdown -->
+                <div class="fc-bell-wrap" id="fcBellWrap">
+                    <button class="fc-bell-btn" onclick="fcToggleBell(event)" title="Notifications">
+                        <i class="bi bi-bell-fill"></i>
+                        <?php if (!empty($new_incidents)): ?>
+                        <span class="fc-bell-badge" id="fcBellBadge"><?= count($new_incidents) ?></span>
+                        <?php endif; ?>
+                    </button>
+
+                    <div class="fc-bell-dropdown" id="fcBellDropdown">
+                        <div class="fc-bell-header">
+                            <span><i class="bi bi-bell-fill me-1"></i> Notifications</span>
+                            <?php if (!empty($new_incidents)): ?>
+                            <span class="fc-bell-count" id="fcBellCount"><?= count($new_incidents) ?> New</span>
+                            <?php endif; ?>
+                        </div>
+                        <div class="fc-bell-body">
+                            <?php if (empty($new_incidents)): ?>
+                                <div class="fc-bell-empty">
+                                    <i class="bi bi-bell-slash"></i>
+                                    <p>No new incidents</p>
+                                </div>
+                            <?php else: ?>
+                                <?php foreach ($new_incidents as $inc): ?>
+                                <div class="fc-bell-item">
+                                    <div class="fc-bell-item-icon">
+                                        <i class="bi bi-file-earmark-plus-fill"></i>
+                                    </div>
+                                    <div class="fc-bell-item-body">
+                                        <div class="fc-bell-item-title">
+                                            New Report <strong>#<?= $inc['id'] ?></strong> &mdash; <?= htmlspecialchars($inc['type_name']) ?>
+                                        </div>
+                                        <div class="fc-bell-item-sub">
+                                            By <?= htmlspecialchars($inc['reporter'] ?? 'Unknown') ?>
+                                            <?= $inc['barangay'] ? ' &bull; ' . htmlspecialchars($inc['barangay']) : '' ?>
+                                        </div>
+                                        <div class="fc-bell-item-time">
+                                            <i class="bi bi-clock"></i>
+                                            <?= date('M d, Y \a\t h:i A', strtotime($inc['created_at'])) ?>
+                                        </div>
+                                    </div>
+                                </div>
+                                <?php endforeach; ?>
+                                <a href="manage_reports.php" class="fc-bell-footer">
+                                    View all pending reports <i class="bi bi-arrow-right"></i>
+                                </a>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+
                 <button onclick="window.print()" class="fc-btn no-print" style="background:#fff;border:1.5px solid var(--fc-border);color:var(--fc-text-2);font-size:13px;padding:8px 16px;">
                     <i class="bi bi-printer-fill"></i> Print Report
                 </button>
@@ -280,38 +178,6 @@ if ($new_users_count > 0) {
                     </a>
                 </div>
             </div>
-
-            <!-- ── ADMIN NOTIFICATION BANNERS ── -->
-            <?php if (!empty($notifs)): ?>
-            <div class="fc-admin-notifs" id="fcAdminNotifs">
-                <div class="fc-admin-notif-header">
-                    <div class="fc-admin-notif-header-title">
-                        <i class="bi bi-bell-fill" style="color:var(--fc-primary)"></i>
-                        System Updates &mdash; Last 24 Hours
-                    </div>
-                    <button class="fc-admin-notif-dismiss-all" onclick="document.getElementById('fcAdminNotifs').style.display='none'">
-                        Dismiss all <i class="bi bi-x"></i>
-                    </button>
-                </div>
-                <div class="fc-notif-row">
-                    <?php foreach ($notifs as $i => $n): ?>
-                    <div class="fc-notif-banner" id="fcNotif<?= $i ?>" style="--notif-color:<?= $n['color'] ?>">
-                        <div class="fc-notif-icon-wrap">
-                            <i class="bi <?= $n['icon'] ?>"></i>
-                        </div>
-                        <div class="fc-notif-body">
-                            <div class="fc-notif-label"><?= $n['label'] ?></div>
-                            <div class="fc-notif-text"><?= $n['text'] ?></div>
-                            <div class="fc-notif-time"><i class="bi bi-clock me-1"></i><?= $n['time'] ?></div>
-                        </div>
-                        <button class="fc-notif-close" onclick="document.getElementById('fcNotif<?= $i ?>').style.display='none'" title="Dismiss">
-                            <i class="bi bi-x"></i>
-                        </button>
-                    </div>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-            <?php endif; ?>
 
             <!-- Stat cards row 1 -->
             <div class="row g-3 mb-3">
@@ -373,7 +239,6 @@ if ($new_users_count > 0) {
 
             <!-- ── ANALYTICS CHARTS ── -->
             <div class="row g-4 mb-4">
-                <!-- Monthly trend -->
                 <div class="col-lg-8">
                     <div class="fc-chart-card" style="padding:0;overflow:hidden;">
                         <div style="padding:22px 24px 0;">
@@ -391,7 +256,6 @@ if ($new_users_count > 0) {
                         </div>
                     </div>
                 </div>
-                <!-- Status donut -->
                 <div class="col-lg-4">
                     <div class="fc-chart-card" style="display:flex;flex-direction:column;">
                         <div class="fc-chart-title"><i class="bi bi-pie-chart-fill" style="color:var(--fc-primary);margin-right:6px;"></i>By Status</div>
@@ -402,7 +266,6 @@ if ($new_users_count > 0) {
             </div>
 
             <div class="row g-4 mb-4">
-                <!-- Incidents by type -->
                 <div class="col-12">
                     <div class="fc-chart-card">
                         <div class="fc-chart-title"><i class="bi bi-tags-fill" style="color:var(--fc-primary);margin-right:6px;"></i>Incidents by Type</div>
@@ -513,17 +376,11 @@ new Chart(document.getElementById('monthlyChart'), {
     data: {
         labels: monthlyLabels,
         datasets: [{
-            label: 'Incidents',
-            data: monthlyData,
-            borderColor: '#e61e1e',
-            borderWidth: 2.5,
-            pointBackgroundColor: '#e61e1e',
-            pointBorderColor: '#fff',
-            pointBorderWidth: 2,
-            pointRadius: 4,
-            pointHoverRadius: 6,
-            fill: true,
-            tension: 0.45,
+            label: 'Incidents', data: monthlyData,
+            borderColor: '#e61e1e', borderWidth: 2.5,
+            pointBackgroundColor: '#e61e1e', pointBorderColor: '#fff',
+            pointBorderWidth: 2, pointRadius: 4, pointHoverRadius: 6,
+            fill: true, tension: 0.45,
             backgroundColor: function(context) {
                 const chart = context.chart;
                 const {ctx, chartArea} = chart;
@@ -542,7 +399,7 @@ new Chart(document.getElementById('monthlyChart'), {
             tooltip: {
                 backgroundColor: '#0f172a',
                 titleFont: { family: 'Lexend', size: 11 },
-                bodyFont:  { family: 'Lexend', size: 13, weight: '700' },
+                bodyFont: { family: 'Lexend', size: 13, weight: '700' },
                 padding: 10, cornerRadius: 8, displayColors: false,
                 callbacks: { label: ctx => ctx.parsed.y + ' incidents' }
             }
@@ -571,8 +428,7 @@ new Chart(document.getElementById('typeChart'), {
     data: {
         labels: <?= json_encode($type_labels) ?>,
         datasets: [{
-            label: 'Incidents',
-            data: <?= json_encode($type_data) ?>,
+            label: 'Incidents', data: <?= json_encode($type_data) ?>,
             backgroundColor: [
                 'rgba(230,30,30,.75)','rgba(59,130,246,.75)','rgba(16,185,129,.75)',
                 'rgba(245,158,11,.75)','rgba(139,92,246,.75)','rgba(148,163,184,.75)'
@@ -589,6 +445,125 @@ new Chart(document.getElementById('typeChart'), {
         }
     }
 });
+</script>
+
+<script>
+(function() {
+    var seenKey = 'fc_admin_seen_ids';
+    var currentIds = '<?= implode(",", array_column($new_incidents, "id")) ?>';
+
+    function hideBadge() {
+        var badge = document.getElementById('fcBellBadge');
+        var count = document.getElementById('fcBellCount');
+        if (badge) badge.style.display = 'none';
+        if (count) count.style.display = 'none';
+    }
+
+    function markSeen() {
+        localStorage.setItem(seenKey, currentIds);
+        hideBadge();
+    }
+
+    function closeDropdown() {
+        document.getElementById('fcBellDropdown').classList.remove('open');
+    }
+
+    window.fcToggleBell = function(e) {
+        e.stopPropagation();
+        var dropdown = document.getElementById('fcBellDropdown');
+        var isOpen = dropdown.classList.contains('open');
+        if (isOpen) {
+            closeDropdown();
+        } else {
+            dropdown.classList.add('open');
+            markSeen();
+        }
+    };
+
+    // Close when clicking anywhere outside the bell wrap
+    window.fcClearNotifs = function() {
+        // Store cleared IDs so they won't show again
+        localStorage.setItem('fc_admin_cleared', localStorage.getItem('fc_admin_seen_ids') || '');
+        // Update UI
+        var body = document.querySelector('#fcBellDropdown .fc-bell-body');
+        if (body) body.innerHTML = '<div class="fc-bell-empty"><i class="bi bi-bell-slash"></i><p>No new incidents</p></div>';
+        var badge = document.getElementById('fcBellBadge');
+        var count = document.getElementById('fcBellCount');
+        var clearBtn = document.getElementById('fcClearBtn');
+        if (badge) badge.style.display = 'none';
+        if (count) count.style.display = 'none';
+        if (clearBtn) clearBtn.style.display = 'none';
+    };
+
+    document.addEventListener('click', function(e) {
+        var wrap = document.getElementById('fcBellWrap');
+        var dropdown = document.getElementById('fcBellDropdown');
+        if (dropdown.classList.contains('open') && wrap && !wrap.contains(e.target)) {
+            closeDropdown();
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        if (localStorage.getItem(seenKey) === currentIds) {
+            hideBadge();
+        }
+    });
+})();
+</script>
+
+
+<script>
+(function() {
+    function pollAdminNotifs() {
+        fetch('get_admin_notifs.php')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                var badge = document.getElementById('fcBellBadge');
+                var countEl = document.getElementById('fcBellCount');
+                var body = document.querySelector('#fcBellDropdown .fc-bell-body');
+                var seenKey = 'fc_admin_seen_ids';
+                var currentIds = data.items.map(function(i){ return i.id; }).join(',');
+                var alreadySeen = localStorage.getItem(seenKey) === currentIds;
+
+                // Update badge
+                if (data.count > 0 && !alreadySeen) {
+                    if (badge) { badge.textContent = data.count; badge.style.display = 'flex'; }
+                    if (countEl) { countEl.textContent = data.count + ' New'; countEl.style.display = ''; }
+                } else {
+                    if (badge) badge.style.display = 'none';
+                    if (countEl) countEl.style.display = 'none';
+                }
+
+                // Re-render dropdown body
+                if (body) {
+                    if (data.items.length === 0) {
+                        body.innerHTML = '<div class="fc-bell-empty"><i class="bi bi-bell-slash"></i><p>No new incidents</p></div>';
+                    } else {
+                        var html = '';
+                        data.items.forEach(function(inc) {
+                            html += '<div class="fc-bell-item">' +
+                                '<div class="fc-bell-item-icon" style="background:#fee2e2;color:#e61e1e"><i class="bi bi-file-earmark-plus-fill"></i></div>' +
+                                '<div class="fc-bell-item-body">' +
+                                    '<div class="fc-bell-item-title">New Report <strong>#' + inc.id + '</strong> &mdash; ' + inc.type + '</div>' +
+                                    '<div class="fc-bell-item-sub">By ' + inc.reporter + (inc.barangay ? ' &bull; ' + inc.barangay : '') + '</div>' +
+                                    '<div class="fc-bell-item-time"><i class="bi bi-clock"></i> ' + inc.time + '</div>' +
+                                '</div></div>';
+                        });
+                        html += '<a href="manage_reports.php" class="fc-bell-footer">View all pending reports <i class="bi bi-arrow-right"></i></a>';
+                        document.getElementById('fcClearBtn').style.display = '';
+                        body.innerHTML = html;
+                    }
+                }
+            })
+            .catch(function(){});
+    }
+
+    // Poll every 30 seconds
+    document.addEventListener('DOMContentLoaded', function() {
+        pollAdminNotifs();
+        setInterval(pollAdminNotifs, 30000);
+    });
+})();
 </script>
 
 <?php include '../includes/footer.php'; ?>

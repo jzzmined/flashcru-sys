@@ -136,7 +136,11 @@ $recent_logs = $conn->query("
                     <div class="fc-breadcrumb">Account / Admin Profile</div>
                 </div>
             </div>
-            <div class="fc-topbar-right"></div>
+            <div class="fc-topbar-right">
+                <a href="dashboard.php" class="fc-bell-btn" title="Notifications" style="text-decoration:none;">
+                    <i class="bi bi-bell-fill"></i>
+                </a>
+            </div>
         </div>
 
         <div class="fc-content">
